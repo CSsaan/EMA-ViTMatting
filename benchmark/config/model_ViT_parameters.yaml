@@ -1,0 +1,10 @@
+image_size: 256
+patch_size: 32
+num_classes: 1000
+dim: 1024
+depth: 2
+heads: 16
+mlp_dim: 2048
+pool: 'mean'
+dropout: 0.1
+emb_dropout: 0.1

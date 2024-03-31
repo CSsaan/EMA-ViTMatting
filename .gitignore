@@ -1,3 +1,13 @@
+.vscode/
+log/
+ckpt/*.pkl
+data/AIM500/*
+data/classification/*
+model/onnx/*onnx
+*.pth
+test.py
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

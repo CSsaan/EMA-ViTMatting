@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "EMA-Net"
+version = "1.0.0"
+description = "Train model with EMA."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+]
+dependencies = [
+    "torch==2.1.2", "torchvision==0.16.2",
+    "tqdm==4.66.2", "skimage==0.19.2", "numpy==1.23.1",, "timm==0.6.11", "opencv-python==4.6.0"
+]
+
+[project.optional-dependencies]
+train = ["deepspeed==0.9.5", "pydantic==1.10.13", "moviepy==1.0.3", "wandb==0.16.3", "tensorboard==2.14.0"]
+dev = ["mypy==1.8.0"]
+
+
+[project.urls]
+"Homepage" = "https://github.com:CSsaan/EMA-ViTMatting"
+"Bug Tracker" = "https://github.com:CSsaan/EMA-ViTMatting/issues"
+
+[tool.setuptools.packages.find]
+exclude = ["assets*", "docker*", "docs", "scripts*"]
+
+[tool.wheel]
+exclude = ["assets*", "docker*", "docs", "scripts*"]
+
+[tool.mypy]
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_untyped_calls = true
+check_untyped_defs = true
+no_implicit_optional = true
