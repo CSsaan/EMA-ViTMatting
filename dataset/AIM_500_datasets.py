@@ -2,6 +2,8 @@ import os
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
+import numpy as np
+from tqdm import tqdm
 
 class AIM500Dataset(Dataset):
     def __init__(self, dataset_name, root_dir):
@@ -21,7 +23,7 @@ class AIM500Dataset(Dataset):
         # Transformations for images and labels
         self.transform_image = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            transforms.Normalize((0.50542366, 0.46995255, 0.44692866), (0.28501507, 0.27542947, 0.28659645)),
             # transforms.Normalize((0.5,), (0.5,))  # 如果你使用的是灰度图像，这里应该是 (0.5,)
             transforms.Resize((256, 256)),  # 如果你需要调整图像大小
             # transforms.RandomHorizontalFlip(),  # 如果你需要随机水平翻转
@@ -57,22 +59,45 @@ class AIM500Dataset(Dataset):
         return image, label
 
 if __name__ == '__main__':
-    batch_size = 8
-    shuffle = True
+    choose_run = 1
 
-    # 设定训练数据集路径
-    train_dataset = AIM500Dataset('train', root_dir='/workspace/ViTMatting/data/AIM500')
-    # 设置批量大小和是否随机打乱数据
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=4,  pin_memory=True, drop_last=True, shuffle=shuffle)
-    # 检查数据加载是否正常工作
-    for images, labels in train_loader:
-        print(images.shape, labels.shape)
-    
-    print("-" * 40)
-    # 设定训练数据集路径
-    test_dataset = AIM500Dataset('test', root_dir='/workspace/ViTMatting/data/AIM500')
-    # 设置批量大小和是否随机打乱数据
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, num_workers=4,  pin_memory=True, drop_last=True, shuffle=shuffle)
-    # 检查数据加载是否正常工作
-    for images, labels in test_loader:
-        print(images.shape, labels.shape)
+    # ---------------- 计算数据集的 Mean & Std -----------------
+    if(choose_run == 1):
+        data_dir = 'C:/Users/11795/Desktop/PPM-100/image'  # 数据集所在目录
+        image_files = os.listdir(data_dir)
+        # 初始化总和
+        total_sum = np.zeros(3)
+        total_sum_sq = np.zeros(3)
+        total_count = 0
+        # 遍历所有图像文件
+        for image_file in  tqdm(image_files):
+            image_path = os.path.join(data_dir, image_file)
+            image = np.array(Image.open(image_path)) / 255.0  # 读取图像并将像素值缩放到[0, 1]
+            total_sum += np.sum(image, axis=(0, 1))
+            total_sum_sq += np.sum(image ** 2, axis=(0, 1))
+            total_count += image.shape[0] * image.shape[1]
+        # 计算均值和方差
+        mean = total_sum / total_count
+        std = np.sqrt((total_sum_sq / total_count) - mean ** 2)
+        print("Mean:", mean)
+        print("Std:", std)
+
+    # --------------------- 测试加载数据集 ---------------------
+    elif (choose_run == 2):
+        batch_size = 8
+        shuffle = True
+        # 设定训练数据集路径
+        train_dataset = AIM500Dataset('train', root_dir='/workspace/ViTMatting/data/AIM500')
+        # 设置批量大小和是否随机打乱数据
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=4,  pin_memory=True, drop_last=True, shuffle=shuffle)
+        # 检查数据加载是否正常工作
+        for images, labels in train_loader:
+            print(images.shape, labels.shape)
+        print("-" * 40)
+        # 设定训练数据集路径
+        test_dataset = AIM500Dataset('test', root_dir='/workspace/ViTMatting/data/AIM500')
+        # 设置批量大小和是否随机打乱数据
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, num_workers=4,  pin_memory=True, drop_last=True, shuffle=shuffle)
+        # 检查数据加载是否正常工作
+        for images, labels in test_loader:
+            print(images.shape, labels.shape)

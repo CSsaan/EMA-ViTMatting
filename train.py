@@ -51,14 +51,14 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
     step_train, step_eval, best = 0, 0, 0
 
     # --------- AIM-500 数据集加载 -----------------
-    dataset = AIM500Dataset('train', root_dir='/workspace/EMA-ViTMatting/data/AIM500')
+    dataset = AIM500Dataset('train', root_dir=os.getcwd()+'/data/AIM500')
     if(args.use_distribute):
         print('DataLoader use distribute.')
         sampler = DistributedSampler(dataset)
         train_data = DataLoader(dataset, batch_size=batch_size, num_workers=world_size, pin_memory=True, drop_last=True, shuffle=True, sampler=sampler)
     else:
         train_data = DataLoader(dataset, batch_size=batch_size, num_workers=world_size, pin_memory=True, drop_last=True, shuffle=True)
-    dataset_val = AIM500Dataset('test', root_dir='/workspace/EMA-ViTMatting/data/AIM500')
+    dataset_val = AIM500Dataset('test', root_dir=os.getcwd()+'/data/AIM500')
     val_data = DataLoader(dataset_val, batch_size=batch_size, num_workers=world_size, pin_memory=True, drop_last=True, shuffle=True)
     # -----------------------------------------------------
     print("train_data.__len__(), val_data.__len__():", dataset.__len__(), dataset_val.__len__())

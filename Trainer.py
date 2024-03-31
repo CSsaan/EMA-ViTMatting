@@ -101,10 +101,13 @@ class LoadModel:
 
             # BUG: 保存结果
             import cv2
+            first_batch_rgb = inputX[0].permute(1, 2, 0).cpu().detach().numpy()
+            first_batch_rgb = cv2.cvtColor(first_batch_rgb, cv2.COLOR_RGB2BGR)
             batch_list = torch.split(pred, 1, dim=0)
-            selected_image = batch_list[0].squeeze()
-            print(selected_image.size())
-            cv2.imwrite('selected_image_opencv.png', selected_image.detach().numpy()*255)
+            selected_image = batch_list[0].squeeze().cpu().detach().numpy()
+            selected_image_rgb = np.stack((selected_image, selected_image, selected_image), axis=-1)
+            concatenated_image = np.concatenate((first_batch_rgb, selected_image_rgb), axis=1)
+            cv2.imwrite('selected_image_opencv.png', concatenated_image*255)
 
             self.optimG.zero_grad()
             loss_mse.backward()
