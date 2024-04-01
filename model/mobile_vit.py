@@ -313,17 +313,11 @@ class MobileViT(nn.Module):
 
 
         # 反向编码上采样
-        print(f'0: {x.size()}')
         x = self.up1(x) + self.re1 # [8, 96, 8, 8]  ->  [1, 80, 16, 16] [1, 64, 32, 32] [1, 48, 64, 64] [1, 32, 128, 128] [1, 256, 256]
-        print(f'1: {x.size()}')
         x = self.up2(x) + self.re0
-        print(f'2: {x.size()}')
         x = self.up3(x)
-        print(f'3: {x.size()}')
         x = self.up4(x)
-        print(f'4: {x.size()}')
         x = self.up5(x)
-        print(f'5: {x.size()}')
 
         return self.to_logits(x)
         return x
