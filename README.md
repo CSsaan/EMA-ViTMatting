@@ -3,7 +3,7 @@ Using EMA to train Matting task
 
 
 Python >= 3.8
-torch >= 1.8.0
+torch >= 2.2.2
 CUDA Version >= 11.7
 skimage 0.19.2
 numpy 1.23.1

@@ -332,8 +332,9 @@ def summary_model(model, input_x):
 if __name__ == '__main__':
     mbvit_xs = MobileViT(
         image_size = (256, 256),
-        dims = [96, 120, 144],
-        channels = [16, 32, 48, 48, 64, 64, 80, 80, 96, 96]
+        dims = [144, 180, 216],
+        channels = [16, 32, 48, 48, 64, 64, 80, 80, 96, 96],
+        depths = (8, 16, 12)
     )
     img = torch.randn(8, 3, 256, 256)
     pred = mbvit_xs(img) # (1, 1000)

@@ -101,7 +101,7 @@ class LoadModel:
             loss_mse = (self.loss(pred.unsqueeze(1), imputY))
 
             # BUG：保存每个batch结果图
-            if(epoch % 1 == 0):
+            if(epoch % 3 == 0):
                 final_image = None
                 for i in range(batch_size):
                     first_batch_rgb = inputX[i].permute(1, 2, 0).cpu().detach().numpy()

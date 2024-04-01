@@ -45,6 +45,7 @@ MODEL_CONFIG = {
     "MobileViT": MobileViT(
             image_size = ALL_parameters['MobileViT_parameters']['image_size'], # 原图输入大小
             dims = ALL_parameters['MobileViT_parameters']['dims'],
-            channels = ALL_parameters['MobileViT_parameters']['channels']
+            channels = ALL_parameters['MobileViT_parameters']['channels'],
+            depths = ALL_parameters['MobileViT_parameters']['depths']
             ),
 }

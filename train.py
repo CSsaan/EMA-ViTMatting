@@ -42,7 +42,7 @@ def get_learning_rate(step):
         mul = step / 2000
         # return 2e-4 * mul
     else:
-        mul = np.cos((step - 2000) / (300 * step_per_epoch - 2000) * np.pi) * 0.5 + 0.5
+        mul = np.cos((step - 2000) / (300 * args.step_per_epoch - 2000) * np.pi) * 0.5 + 0.5
     return (1e-4 - 1e-5) * mul + 1e-5
 
 def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_path):
@@ -115,7 +115,7 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
         if(train_loss/step_train < min_loss):
             model.save_model(epoch, local_rank)
             min_loss = train_loss
-        print(epoch, min_loss)
+        # print(epoch, min_loss)
         
         # 分布式训练进程同步
         if(args.use_distribute):
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     parser.add_argument('--reload_model_name', default='MobileViT_2', type=str, help='name of reload model')
     parser.add_argument('--local_rank', default=0, type=int, help='local rank')
     parser.add_argument('--world_size', default=4, type=int, help='world size')
-    parser.add_argument('--batch_size', default=8, type=int, help='batch size')
+    parser.add_argument('--batch_size', default=16, type=int, help='batch size')
     parser.add_argument('--data_path', default= "data/classification/train", type=str, help='data path of vimeo90k')
     parser.add_argument('--use_distribute', default= False, type=bool, help='train on distribute Devices by torch.distributed')
     args = parser.parse_args()
