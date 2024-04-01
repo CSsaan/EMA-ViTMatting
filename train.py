@@ -110,7 +110,7 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
             step_train += 1
         
         if epoch % 1 == 0:
-            evaluate(model, val_data, epoch, local_rank)
+            evaluate(model, val_data, epoch, local_rank, epoch, batch_size)
 
         if(train_loss/step_train < min_loss):
             model.save_model(epoch, local_rank)
@@ -121,7 +121,7 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
         if(args.use_distribute):
             dist.barrier()
 
-def evaluate(model, val_data, nr_eval, local_rank):
+def evaluate(model, val_data, nr_eval, local_rank, epoch, batch_size):
     if local_rank == 0:
         writer_val = SummaryWriter('log/validate_EMA-Matting')
 
@@ -132,7 +132,7 @@ def evaluate(model, val_data, nr_eval, local_rank):
         imgs = data.to(device, non_blocking=True)
         gt = target.to(device, non_blocking=True)
         with torch.no_grad():
-            pred, _loss = model.update(imgs, gt, training=False)
+            pred, _loss = model.update(imgs, gt, epoch, batch_size, training=False)
             loss = _loss
         # for j in range(gt.shape[0]):
         #     loss.append(-10 * math.log10(((gt[j] - pred[j]) * (gt[j] - pred[j])).mean().cpu().item()))

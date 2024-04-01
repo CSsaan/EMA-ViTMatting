@@ -26,8 +26,9 @@ class AIM500Dataset(Dataset):
             transforms.Normalize((0.50542366, 0.46995255, 0.44692866), (0.28501507, 0.27542947, 0.28659645)),
             transforms.Resize((256, 256)),  # 如果你需要调整图像大小
             transforms.RandomHorizontalFlip(),  # 如果你需要随机水平翻转
-            transforms.RandomRotation(10),  # 如果你需要随机旋转
-            transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),  # 如果你需要随机仿射变换
+            transforms.RandomVerticalFlip(),  # 如果你需要随机垂直翻转
+            # transforms.RandomRotation(10),  # 如果你需要随机旋转
+            # transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),  # 如果你需要随机仿射变换
             # transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # 如果你需要颜色抖动
             # transforms.RandomGrayscale(p=0.2),  # 如果你需要随机灰度
             # transforms.RandomPerspective(distortion_scale=0.5, p=0.5),  # 如果你需要随机透视变换
