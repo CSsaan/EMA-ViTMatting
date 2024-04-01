@@ -77,7 +77,7 @@ class LoadModel:
             save_dir = 'ckpt'
             if not os.path.exists(save_dir):
                 os.makedirs(save_dir)
-            # 保存模型参数
+            # 保存模型参数(纯模型结构，不支持断点续练)
             torch.save(self.net.state_dict(), f'{save_dir}/{self.name}_{str(epoch)}_pure.pkl')
             # 支持断点续练
             state = {'model': self.net.state_dict(), 'optimizer': self.optimG.state_dict(), 'epoch': epoch}

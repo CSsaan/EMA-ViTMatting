@@ -147,7 +147,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--use_model_name', default='MobileViT', type=str, help='name of model to use') # 'GoogLeNet'、 'ViT'、 'MobileViT'
     parser.add_argument('--reload_model', default=False, type=bool, help='reload model')
-    parser.add_argument('--reload_model_name', default='ours_7', type=str, help='name of reload model')
+    parser.add_argument('--reload_model_name', default='MobileViT_2', type=str, help='name of reload model')
     parser.add_argument('--local_rank', default=0, type=int, help='local rank')
     parser.add_argument('--world_size', default=4, type=int, help='world size')
     parser.add_argument('--batch_size', default=8, type=int, help='batch size')
