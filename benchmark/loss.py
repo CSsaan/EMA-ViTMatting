@@ -106,9 +106,8 @@ class MattingLoss(torch.nn.Module):
         super(MattingLoss, self).__init__()
 
     def mse_loss(self, predict, alpha):
-        weighted = torch.ones(alpha.shape).cuda() if predict.is_cuda else torch.ones(alpha.shape)
-        alpha_f = alpha
-        alpha_f = alpha_f.cuda() if predict.is_cuda else alpha_f
+        weighted = torch.ones(alpha.shape).to(predict.device)
+        alpha_f = alpha.to(predict.device)
         diff = predict - alpha_f
         alpha_loss = torch.sqrt(diff ** 2 + 1e-12)
         alpha_loss = alpha_loss.sum() / (weighted.sum())
@@ -116,7 +115,7 @@ class MattingLoss(torch.nn.Module):
 
     def forward(self, predict, alpha):
         # _mse = self.mse_loss(predict, alpha)
-        Lap = LapLoss()
+        Lap = LapLoss().to(predict.device)
         Laposs = Lap(predict, alpha)
         l1 = F.l1_loss(predict, alpha)
         l1_sobel = F.l1_loss(kornia.filters.sobel(predict), kornia.filters.sobel(alpha))
@@ -134,7 +133,7 @@ if __name__ == '__main__':
     # alpha = torch.ones(1, 1, 256, 256)
 
     # 实例化 MattingLoss 类
-    matting_loss = MattingLoss()
+    matting_loss = MattingLoss().to(predict.device)
 
     # 计算损失大小
     loss = matting_loss(predict, alpha)

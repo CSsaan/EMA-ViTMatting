@@ -24,7 +24,7 @@ class LoadModel:
 
         # train
         self.optimG = AdamW(self.net.parameters(), lr=2e-4, weight_decay=1e-4)
-        self.loss = MattingLoss()
+        self.loss = MattingLoss().to('cuda') if torch.cuda.is_available() else MattingLoss()
         if (use_distribute and local_rank != -1):
             self.net = DDP(self.net, device_ids=[local_rank], output_device=local_rank)
 
