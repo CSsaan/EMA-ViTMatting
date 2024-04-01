@@ -30,3 +30,4 @@ Werkzeug==3.0.1
 netron==7.5.7
 einops==0.7.0
 opencv-python==4.9.0.80
+kornia

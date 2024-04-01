@@ -2,6 +2,7 @@ import torch
 import numpy as np 
 import torch.nn.functional as F
 from torch.autograd import Variable
+import kornia
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -115,18 +116,40 @@ class MattingLoss(torch.nn.Module):
         kernel = torch.FloatTensor(kernel[:, None, :, :]).cuda() if self.cuda else torch.FloatTensor(kernel[:, None, :, :])
         return Variable(kernel, requires_grad=False)
 
-    def forward(self, predict, alpha):
+    def mse_loss(self, predict, alpha):
         weighted = torch.ones(alpha.shape).cuda() if self.cuda else torch.ones(alpha.shape)
-        alpha_f = alpha / 255.
+        alpha_f = alpha
         alpha_f = alpha_f.cuda() if self.cuda else alpha_f
         diff = predict - alpha_f
         alpha_loss = torch.sqrt(diff ** 2 + 1e-12)
         alpha_loss = alpha_loss.sum() / (weighted.sum())
+        return alpha_loss
+
+    def forward(self, predict, alpha):
+        _mse = self.mse_loss(predict, alpha)
+        l1 = F.l1_loss(predict, alpha)
+        l1_sobel = F.l1_loss(kornia.filters.sobel(predict), kornia.filters.sobel(alpha))
+        mse_loss = F.mse_loss(predict, alpha)
 
         # gauss_kernel = self.build_gauss_kernel(size=5, sigma=1.0, n_channels=self.n_channels)
         # pyr_alpha  = laplacian_pyramid(alpha_f, gauss_kernel, 5)
         # pyr_predict = laplacian_pyramid(predict, gauss_kernel, 5)
         # laplacian_loss = sum(F.l1_loss(a, b) for a, b in zip(pyr_alpha, pyr_predict))
         
-        return alpha_loss # + laplacian_loss
-    
+        return l1 + l1_sobel + mse_loss # + laplacian_loss
+
+if __name__ == '__main__':
+    # 假设有两张图像 predict 和 alpha，均为 torch.Tensor 类型
+    predict = torch.randn(1, 1, 256, 256)
+    # alpha = predict
+    alpha = torch.randn(1, 1, 256, 256)
+
+    # predict = torch.zeros(1, 1, 256, 256)
+    # alpha = torch.ones(1, 1, 256, 256)
+
+    # 实例化 MattingLoss 类
+    matting_loss = MattingLoss(n_channels=3, cuda=False)
+
+    # 计算损失大小
+    loss = matting_loss(predict, alpha)
+    print("{:.6f}".format(loss.item()))

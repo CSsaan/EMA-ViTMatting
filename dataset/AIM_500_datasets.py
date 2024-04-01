@@ -24,18 +24,16 @@ class AIM500Dataset(Dataset):
         self.transform_image = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.50542366, 0.46995255, 0.44692866), (0.28501507, 0.27542947, 0.28659645)),
-            # transforms.Normalize((0.5,), (0.5,))  # 如果你使用的是灰度图像，这里应该是 (0.5,)
             transforms.Resize((256, 256)),  # 如果你需要调整图像大小
-            # transforms.RandomHorizontalFlip(),  # 如果你需要随机水平翻转
-            # transforms.RandomRotation(10),  # 如果你需要随机旋转
-            # transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),  # 如果你需要随机仿射变换
+            transforms.RandomHorizontalFlip(),  # 如果你需要随机水平翻转
+            transforms.RandomRotation(10),  # 如果你需要随机旋转
+            transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),  # 如果你需要随机仿射变换
             # transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # 如果你需要颜色抖动
             # transforms.RandomGrayscale(p=0.2),  # 如果你需要随机灰度
             # transforms.RandomPerspective(distortion_scale=0.5, p=0.5),  # 如果你需要随机透视变换
             # transforms.RandomCrop(224, padding=4),  # 如果你需要随机裁剪
             # transforms.RandomResizedCrop(224),  # 如果你需要随机调整大小和裁剪
             # transforms.RandomErasing(p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0),  # 如果你需要随机擦除
-            # transforms.RandomSizedCrop(224),  # 如果你需要随机大小裁剪
         ])
         
         self.transform_label = transforms.Compose([
