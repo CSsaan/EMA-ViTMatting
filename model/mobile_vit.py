@@ -27,7 +27,7 @@ def conv_nxn_bn(inp, oup, kernel_size=3, stride=1):
 # classes
 
 class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim, dropout=0.):
+    def __init__(self, dim, hidden_dim, dropout=0.1):
         super().__init__()
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
@@ -42,7 +42,7 @@ class FeedForward(nn.Module):
         return self.net(x)
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads=8, dim_head=64, dropout=0.):
+    def __init__(self, dim, heads=8, dim_head=64, dropout=0.1):
         super().__init__()
         inner_dim = dim_head * heads
         self.heads = heads
@@ -80,7 +80,7 @@ class Transformer(nn.Module):
     Based on: https://github.com/lucidrains/vit-pytorch
     """
 
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout=0.):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout=0.1):
         super().__init__()
         self.layers = nn.ModuleList([])
         for _ in range(depth):
@@ -144,7 +144,7 @@ class MV2Block(nn.Module):
         return out
 
 class MobileViTBlock(nn.Module):
-    def __init__(self, dim, depth, channel, kernel_size, patch_size, mlp_dim, dropout=0.):
+    def __init__(self, dim, depth, channel, kernel_size, patch_size, mlp_dim, dropout=0.1):
         super().__init__()
         self.ph, self.pw = patch_size
 
@@ -191,6 +191,20 @@ class UpsampleBlock(nn.Module):
         x = self.conv_transpose(x)
         x = self.batch_norm(x)
         x = self.silu(x)
+        return x
+
+class UpsampleBlock2(nn.Module):
+    def __init__(self, in_channels, out_channels, bias=True):
+        super(UpsampleBlock2, self).__init__()
+        self.up = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=bias),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(True),
+        )
+
+    def forward(self, x):
+        x = self.up(x)
         return x
 
 class MobileViT(nn.Module):
@@ -268,11 +282,17 @@ class MobileViT(nn.Module):
             nn.ConvTranspose2d(channels[1], channels[0], kernel_size=2, stride=2, padding=0),
         )
 
-        self.up1 = UpsampleBlock(channels[9], channels[7])
-        self.up2 = UpsampleBlock(channels[7], channels[5])
-        self.up3 = UpsampleBlock(channels[5], channels[3])
-        self.up4 = UpsampleBlock(channels[3], channels[1])
-        self.up5 = UpsampleBlock(channels[1], channels[0])
+        # self.up1 = UpsampleBlock(channels[9], channels[7])
+        # self.up2 = UpsampleBlock(channels[7], channels[5])
+        # self.up3 = UpsampleBlock(channels[5], channels[3])
+        # self.up4 = UpsampleBlock(channels[3], channels[1])
+        # self.up5 = UpsampleBlock(channels[1], channels[0])
+
+        self.up1 = UpsampleBlock2(channels[9], channels[7], bias=False)
+        self.up2 = UpsampleBlock2(channels[7], channels[5], bias=False)
+        self.up3 = UpsampleBlock2(channels[5], channels[3], bias=False)
+        self.up4 = UpsampleBlock2(channels[3], channels[1], bias=False)
+        self.up5 = UpsampleBlock2(channels[1], channels[0])
 
         self.to_logits = nn.Sequential(
             Reduce('b c h w -> b h w', 'mean'),
@@ -293,16 +313,17 @@ class MobileViT(nn.Module):
 
 
         # 反向编码上采样
-        # [1, 96, 8, 8]
-        # for conv in self.trunk_up:
-        #     x = conv(x) # [1, 80, 16, 16] [1, 64, 32, 32] [1, 48, 64, 64] [1, 32, 128, 128]
-        #     print(f'{x.size()}')
-
-        x = self.up1(x) + self.re1
+        print(f'0: {x.size()}')
+        x = self.up1(x) + self.re1 # [8, 96, 8, 8]  ->  [1, 80, 16, 16] [1, 64, 32, 32] [1, 48, 64, 64] [1, 32, 128, 128] [1, 256, 256]
+        print(f'1: {x.size()}')
         x = self.up2(x) + self.re0
+        print(f'2: {x.size()}')
         x = self.up3(x)
+        print(f'3: {x.size()}')
         x = self.up4(x)
+        print(f'4: {x.size()}')
         x = self.up5(x)
+        print(f'5: {x.size()}')
 
         return self.to_logits(x)
         return x
