@@ -300,23 +300,26 @@ class MobileViT(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x) # [1, 3, 256, 256] -> [1, 16, 128, 128]
-        for conv in self.stem:
-            x = conv(x) # [1, 32, 128, 128] -> [1, 48, 64, 64] -> [1, 48, 64, 64] -> [1, 48, 64, 64]
+        for idx, conv in enumerate(self.stem):
+            x = conv(x) # [1, 32, 128, 128] [1, 48, 64, 64] [1, 48, 64, 64] [1, 48, 64, 64]
+            if idx == 0:
+                self.re128 = x
+        self.re64 = x
         for idx, (conv, attn) in enumerate(self.trunk):
             x = conv(x) # [1, 64, 32, 32] [1, 80, 16, 16] [1, 96, 8, 8]
             x = attn(x) # (与上面同尺寸)
             # print(idx, " : ",x.size())
             if idx == 0:
-                self.re0 = x
+                self.re32 = x
             elif idx == 1:
-                self.re1 = x
+                self.re16 = x
 
 
         # 反向编码上采样
-        x = self.up1(x) + self.re1 # [8, 96, 8, 8]  ->  [1, 80, 16, 16] [1, 64, 32, 32] [1, 48, 64, 64] [1, 32, 128, 128] [1, 256, 256]
-        x = self.up2(x) + self.re0
-        x = self.up3(x)
-        x = self.up4(x)
+        x = self.up1(x) + self.re16 # [8, 96, 8, 8]  ->  [1, 80, 16, 16] [1, 64, 32, 32] [1, 48, 64, 64] [1, 32, 128, 128] [1, 256, 256]
+        x = self.up2(x) + self.re32
+        x = self.up3(x) + self.re64
+        x = self.up4(x) + self.re128
         x = self.up5(x)
 
         return self.to_logits(x)
