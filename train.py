@@ -40,10 +40,10 @@ def set_random_seed(seed, deterministic=False):
 def get_learning_rate(step):
     if step < 2000:
         mul = step / 2000
-        return 2e-4 * mul
+        # return 2e-4 * mul
     else:
-        mul = np.cos((step - 2000) / (300 * args.step_per_epoch - 2000) * math.pi) * 0.5 + 0.5
-        return (2e-4 - 2e-5) * mul + 2e-5
+        mul = np.cos((step - 2000) / (300 * step_per_epoch - 2000) * np.pi) * 0.5 + 0.5
+    return (1e-4 - 1e-5) * mul + 1e-5
 
 def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_path):
     if local_rank == 0:
@@ -91,7 +91,7 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
             gt = target.to(device, non_blocking=False)
             
             learning_rate = get_learning_rate(step_train)
-            _, _loss = model.update(imgs, gt, learning_rate, training=True)
+            _, _loss = model.update(imgs, gt, epoch, batch_size, learning_rate, training=True)
             train_loss += _loss
             train_time_interval = time.time() - time_stamp
             time_stamp = time.time()
