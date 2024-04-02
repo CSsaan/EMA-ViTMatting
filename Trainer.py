@@ -121,7 +121,7 @@ class LoadModel:
                         final_image = concatenated_image
                     else:
                         final_image = np.concatenate((final_image, concatenated_image), axis=1)
-                cv2.imwrite('batch_result.png', final_image*255)
+                cv2.imwrite('batch_result_train.png', final_image*255)
 
             self.optimG.zero_grad()
             loss_mse.backward()
@@ -131,6 +131,28 @@ class LoadModel:
             with torch.no_grad():
                 pred = self.net(inputX)
                 loss_mse = (self.loss(pred.unsqueeze(1), imputY))
+
+                # BUG：保存每个batch结果图
+                final_image = None
+                for i in range(batch_size):
+                    first_batch_rgb = inputX[i].permute(1, 2, 0).cpu().detach().numpy()
+                    first_batch_rgb = cv2.cvtColor(first_batch_rgb, cv2.COLOR_RGB2BGR)
+                    # output
+                    batch_list = torch.split(pred, 1, dim=0)
+                    selected_image = batch_list[i].squeeze().cpu().detach().numpy()
+                    selected_image_rgb = np.stack((selected_image, selected_image, selected_image), axis=-1)
+                    # inputY
+                    batch_imputY = torch.split(imputY, 1, dim=0)
+                    selected_imageY = batch_imputY[i].squeeze().cpu().detach().numpy()
+                    selected_imageY_rgb = np.stack((selected_imageY, selected_imageY, selected_imageY), axis=-1)
+                    # concatenate
+                    concatenated_image = np.concatenate((first_batch_rgb, selected_imageY_rgb, selected_image_rgb), axis=0)
+                    if final_image is None:
+                        final_image = concatenated_image
+                    else:
+                        final_image = np.concatenate((final_image, concatenated_image), axis=1)
+                cv2.imwrite('batch_result_test.png', final_image*255)
+
                 return pred, loss_mse
 
 
