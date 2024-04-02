@@ -47,7 +47,7 @@ python train.py --use_model_name 'MobileViT' --reload_model False --local_rank 0
 
 #### 测试脚本:
 ```bash
-python demo_CS.py --xxx
+python inferenceCS.py --image_path data/AIM500/test/original/o_dc288b1a.jpg --model_name MobileViT_194_pure
 ```
 
 ## 📖 论文
@@ -67,7 +67,7 @@ python demo_CS.py --xxx
 - [x] 训练                     -> train.py
 - [x] 模型保存                 -> Trainer.py
 - [x] 测试可视化               -> 
-- [ ] 模型推理                 ->
+- [x] 模型推理                 -> inferenceCS.py
 - [ ] 模型加速                 ->
 - [ ] 模型优化                 ->
 - [ ] 模型调参                 ->
@@ -97,5 +97,5 @@ python demo_CS.py --xxx
 ├── pyproject.toml           -> 项目配置
 ├── requirements.txt
 ├── train.py                 -> 主程序
-└── demo_CS.py               -> 模型推理
+└── inferenceCS.py           -> 模型推理
 ```

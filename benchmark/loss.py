@@ -121,7 +121,7 @@ class MattingLoss(torch.nn.Module):
         l1_sobel = F.l1_loss(kornia.filters.sobel(predict), kornia.filters.sobel(alpha))
         mse_loss = F.mse_loss(predict, alpha)
         
-        return Laposs + l1 + l1_sobel + mse_loss # + laplacian_loss
+        return Laposs + l1 + 0.5*l1_sobel + mse_loss # + laplacian_loss
 
 if __name__ == '__main__':
     # 假设有两张图像 predict 和 alpha，均为 torch.Tensor 类型

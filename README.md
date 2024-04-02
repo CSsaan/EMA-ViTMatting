@@ -56,7 +56,7 @@ python train.py --use_model_name 'MobileViT' --reload_model False --local_rank 0
 
 #### test script:
 ```bash
-python demo_CS.py --xxx
+python inferenceCS.py --image_path data/AIM500/test/original/o_dc288b1a.jpg --model_name MobileViT_194_pure
 ```
 
 ## 📖 Paper
@@ -76,7 +76,7 @@ None
 - [x] Training                         -> train.py
 - [x] Model saving                     -> Trainer.py
 - [x] Test visualization               ->
-- [ ] Model inference                  ->
+- [x] Model inference                  -> inferenceCS.py
 - [ ] Model acceleration               ->
 - [ ] Model optimization               ->
 - [ ] Model tuning                     ->
@@ -105,5 +105,5 @@ None
 ├── pyproject.toml           -> project config
 ├── requirements.txt
 ├── train.py                 -> main
-└── demo_CS.py               -> model inference
+└── inferenceCS.py           -> model inference
 ```
