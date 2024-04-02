@@ -165,18 +165,12 @@ class MobileViTBlock(nn.Module):
 
         # Global representations
         _, _, h, w = x.shape # [1, 96, 32, 32]
-        # print(f"0:{x.size()}")
         x = rearrange(x, 'b d (h ph) (w pw) -> b (ph pw) (h w) d', ph=self.ph, pw=self.pw)
-        # print(f"1:{x.size()}")
         x = self.transformer(x)
-        # print(f"2:{x.size()}")
         x = rearrange(x, 'b (ph pw) (h w) d -> b d (h ph) (w pw)', h=h//self.ph, w=w//self.pw, ph=self.ph, pw=self.pw) # [1, 96, 32, 32]
-        # print(f"3:{x.size()}")
         # Fusion
         x = self.conv3(x) # [1, 64, 32, 32]
-        # print(f"4:{x.size()}")
         x = torch.cat((x, y), 1) # [1, 128, 32, 32]
-        # print(f"5:{x.size()}")
         x = self.conv4(x)
         return x
 
@@ -315,7 +309,7 @@ class MobileViT(nn.Module):
                 self.re16 = x
 
 
-        # 反向编码上采样
+        # 反向编码上采样 TODO:改add为cat
         x = self.up1(x) + self.re16 # [8, 96, 8, 8]  ->  [1, 80, 16, 16] [1, 64, 32, 32] [1, 48, 64, 64] [1, 32, 128, 128] [1, 256, 256]
         x = self.up2(x) + self.re32
         x = self.up3(x) + self.re64
