@@ -101,8 +101,8 @@ class LoadModel:
             pred = self.net(inputX)
             loss_mse = (self.loss(pred.unsqueeze(1), imputY))
 
-            # BUG：保存每个batch结果图
-            if(epoch % 3 == 0):
+            # 保存每个batch结果图
+            if(epoch % 2 == 0):
                 final_image = None
                 for i in range(batch_size):
                     first_batch_rgb = inputX[i].permute(1, 2, 0).cpu().detach().numpy()
@@ -132,7 +132,7 @@ class LoadModel:
                 pred = self.net(inputX)
                 loss_mse = (self.loss(pred.unsqueeze(1), imputY))
 
-                # BUG：保存每个batch结果图
+                # 保存每个batch结果图
                 final_image = None
                 for i in range(batch_size):
                     first_batch_rgb = inputX[i].permute(1, 2, 0).cpu().detach().numpy()

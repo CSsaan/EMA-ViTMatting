@@ -115,22 +115,22 @@ class MattingLoss(torch.nn.Module):
 
     def forward(self, predict, alpha):
         # _mse = self.mse_loss(predict, alpha)
-        Lap = LapLoss().to(predict.device)
+        Lap = LapLoss(max_levels=3).to(predict.device)
         Laposs = Lap(predict, alpha)
         l1 = F.l1_loss(predict, alpha)
         l1_sobel = F.l1_loss(kornia.filters.sobel(predict), kornia.filters.sobel(alpha))
         mse_loss = F.mse_loss(predict, alpha)
         
-        return Laposs + l1 + 0.5*l1_sobel + mse_loss # + laplacian_loss
+        return l1 + 2.0*l1_sobel + mse_loss + Laposs
 
 if __name__ == '__main__':
     # 假设有两张图像 predict 和 alpha，均为 torch.Tensor 类型
-    predict = torch.randn(1, 1, 256, 256)
+    predict = torch.randn(1, 1, 320, 320)
     alpha = predict
-    # alpha = torch.randn(1, 1, 256, 256)
+    # alpha = torch.randn(1, 1, 320, 320)
 
-    # predict = torch.zeros(1, 1, 256, 256)
-    # alpha = torch.ones(1, 1, 256, 256)
+    # predict = torch.zeros(1, 1, 320, 320)
+    # alpha = torch.ones(1, 1, 320, 320)
 
     # 实例化 MattingLoss 类
     matting_loss = MattingLoss().to(predict.device)

@@ -15,7 +15,7 @@ def main(image_path, model_name):
     # 定义预处理操作
     preprocess = transforms.Compose([
         transforms.ToPILImage(),  # 转换为PIL图像
-        transforms.Resize((256, 256)),  # 与训练时相同的Resize大小
+        transforms.Resize((320, 320)),  # 与训练时相同的Resize大小
         transforms.ToTensor(),  # 转换为Tensor
         transforms.Normalize(mean=[0.50542366, 0.46995255, 0.44692866], std=[0.28501507, 0.27542947, 0.28659645])  # 与训练时相同的Normalize参数
     ])

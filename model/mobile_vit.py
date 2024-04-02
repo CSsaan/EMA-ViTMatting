@@ -27,7 +27,7 @@ def conv_nxn_bn(inp, oup, kernel_size=3, stride=1):
 # classes
 
 class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim, dropout=0.1):
+    def __init__(self, dim, hidden_dim, dropout=0.2):
         super().__init__()
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
@@ -42,7 +42,7 @@ class FeedForward(nn.Module):
         return self.net(x)
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads=8, dim_head=64, dropout=0.1):
+    def __init__(self, dim, heads=8, dim_head=64, dropout=0.2):
         super().__init__()
         inner_dim = dim_head * heads
         self.heads = heads
@@ -80,7 +80,7 @@ class Transformer(nn.Module):
     Based on: https://github.com/lucidrains/vit-pytorch
     """
 
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout=0.1):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout=0.2):
         super().__init__()
         self.layers = nn.ModuleList([])
         for _ in range(depth):
@@ -144,7 +144,7 @@ class MV2Block(nn.Module):
         return out
 
 class MobileViTBlock(nn.Module):
-    def __init__(self, dim, depth, channel, kernel_size, patch_size, mlp_dim, dropout=0.1):
+    def __init__(self, dim, depth, channel, kernel_size, patch_size, mlp_dim, dropout=0.2):
         super().__init__()
         self.ph, self.pw = patch_size
 
@@ -281,11 +281,11 @@ class MobileViT(nn.Module):
         # self.up3 = UpsampleBlock(channels[5], channels[3])
         # self.up4 = UpsampleBlock(channels[3], channels[1])
         # self.up5 = UpsampleBlock(channels[1], channels[0])
-
-        self.up1 = UpsampleBlock2(channels[9], channels[7], bias=False)
-        self.up2 = UpsampleBlock2(channels[7], channels[5], bias=False)
-        self.up3 = UpsampleBlock2(channels[5], channels[3], bias=False)
-        self.up4 = UpsampleBlock2(channels[3], channels[1], bias=False)
+        
+        self.up1 = UpsampleBlock2(channels[9], channels[7]//2, bias=False)
+        self.up2 = UpsampleBlock2(channels[7], channels[5]//2, bias=False)
+        self.up3 = UpsampleBlock2(channels[5], channels[3]//2, bias=False)
+        self.up4 = UpsampleBlock2(channels[3], channels[1]//2, bias=False)
         self.up5 = UpsampleBlock2(channels[1], channels[0])
 
         self.to_logits = nn.Sequential(
@@ -293,31 +293,32 @@ class MobileViT(nn.Module):
         )
 
     def forward(self, x):
+        # self.re256 = nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
         x = self.conv1(x) # [1, 3, 256, 256] -> [1, 16, 128, 128]
         for idx, conv in enumerate(self.stem):
             x = conv(x) # [1, 32, 128, 128] [1, 48, 64, 64] [1, 48, 64, 64] [1, 48, 64, 64]
             if idx == 0:
-                self.re128 = x
-        self.re64 = x
+                self.re128 = nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
+        
+        self.re64 = nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
         for idx, (conv, attn) in enumerate(self.trunk):
             x = conv(x) # [1, 64, 32, 32] [1, 80, 16, 16] [1, 96, 8, 8]
             x = attn(x) # (与上面同尺寸)
             # print(idx, " : ",x.size())
             if idx == 0:
-                self.re32 = x
+                self.re32 = nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
             elif idx == 1:
-                self.re16 = x
+                self.re16 = nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
 
 
-        # 反向编码上采样 TODO:改add为cat
-        x = self.up1(x) + self.re16 # [8, 96, 8, 8]  ->  [1, 80, 16, 16] [1, 64, 32, 32] [1, 48, 64, 64] [1, 32, 128, 128] [1, 256, 256]
-        x = self.up2(x) + self.re32
-        x = self.up3(x) + self.re64
-        x = self.up4(x) + self.re128
+        # 反向编码上采样, 改add为cat
+        x = torch.cat((self.up1(x), self.re16), dim=1) # [8, 96, 8, 8]  ->  [1, 80, 16, 16] [1, 64, 32, 32] [1, 48, 64, 64] [1, 32, 128, 128] [1, 256, 256]
+        x = torch.cat((self.up2(x), self.re32), dim=1)
+        x = torch.cat((self.up3(x), self.re64), dim=1)
+        x = torch.cat((self.up4(x), self.re128), dim=1)
         x = self.up5(x)
 
         return self.to_logits(x)
-        return x
 
 
 def summary_model(model, input_x):
@@ -325,12 +326,12 @@ def summary_model(model, input_x):
 
 if __name__ == '__main__':
     mbvit_xs = MobileViT(
-        image_size = (256, 256),
+        image_size = (320, 320),
         dims = [144, 180, 216],
         channels = [16, 32, 48, 48, 64, 64, 80, 80, 96, 96],
         depths = (8, 16, 12)
     )
-    img = torch.randn(8, 3, 256, 256)
+    img = torch.randn(8, 3, 320, 320)
     pred = mbvit_xs(img) # (1, 1000)
     print(f"pred:{pred.size()}")
 

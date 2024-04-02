@@ -4,6 +4,12 @@ from torchvision import transforms
 from PIL import Image
 import numpy as np
 from tqdm import tqdm
+		
+import sys
+sys.path.append('../')
+from config import *
+
+(w, h) = load_model_parameters('benchmark/config/model_MobileViT_parameters.yaml')['image_size']
 
 class AIM500Dataset(Dataset):
     def __init__(self, dataset_name, root_dir):
@@ -24,7 +30,7 @@ class AIM500Dataset(Dataset):
         self.transform_image = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.50542366, 0.46995255, 0.44692866), (0.28501507, 0.27542947, 0.28659645)),
-            transforms.Resize((256, 256)),  # 如果你需要调整图像大小
+            transforms.Resize((w, h)),  # 如果你需要调整图像大小
             # transforms.RandomHorizontalFlip(),  # 如果你需要随机水平翻转
             # transforms.RandomVerticalFlip(),  # 如果你需要随机垂直翻转
             # transforms.RandomRotation(10),  # 如果你需要随机旋转
@@ -40,7 +46,7 @@ class AIM500Dataset(Dataset):
         self.transform_label = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,)),
-            transforms.Resize((256, 256)),
+            transforms.Resize((w, h)),
         ])
 
     def __len__(self):
