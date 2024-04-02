@@ -20,13 +20,14 @@ class LoadModel:
 
         self.name = model_name
         print(f'loaded model: {self.name}')
-        self.device()
-
+        
         # train
         self.optimG = AdamW(self.net.parameters(), lr=2e-4, weight_decay=1e-4)
-        self.loss = MattingLoss().to('cuda') if torch.cuda.is_available() else MattingLoss()
+        self.loss = MattingLoss()
         if (use_distribute and local_rank != -1):
             self.net = DDP(self.net, device_ids=[local_rank], output_device=local_rank)
+        # move model and loss function to device
+        self.device()
 
     def train(self):
         self.net.train()
@@ -37,7 +38,7 @@ class LoadModel:
     def device(self):
         _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.net.to(_device)
-        # self.loss.to(_device)
+        self.loss.to(_device)
         print(f'Model use Device: {_device}')
 
     def reload_model(self, name=None):
@@ -77,11 +78,11 @@ class LoadModel:
             save_dir = 'ckpt'
             if not os.path.exists(save_dir):
                 os.makedirs(save_dir)
-            # 保存模型参数(纯模型结构，不支持断点续练)
-            torch.save(self.net.state_dict(), f'{save_dir}/{self.name}_{str(epoch)}_pure.pkl')
-            # 支持断点续练
+            # 保存模型参数(纯模型结构，不支持断点续训)
+            torch.save(self.net.state_dict(), os.path.join(save_dir, f'{self.name}_{str(epoch)}_pure.pkl'))
+            # 支持断点续训
             state = {'model': self.net.state_dict(), 'optimizer': self.optimG.state_dict(), 'epoch': epoch}
-            torch.save(state, f'ckpt/{self.name}_{str(epoch)}.pkl')
+            torch.save(state, os.path.join('ckpt', f'{self.name}_{str(epoch)}.pkl'))
 
     @torch.no_grad()
     def inference(self, input):
@@ -106,10 +107,16 @@ class LoadModel:
                 for i in range(batch_size):
                     first_batch_rgb = inputX[i].permute(1, 2, 0).cpu().detach().numpy()
                     first_batch_rgb = cv2.cvtColor(first_batch_rgb, cv2.COLOR_RGB2BGR)
+                    # output
                     batch_list = torch.split(pred, 1, dim=0)
                     selected_image = batch_list[i].squeeze().cpu().detach().numpy()
                     selected_image_rgb = np.stack((selected_image, selected_image, selected_image), axis=-1)
-                    concatenated_image = np.concatenate((first_batch_rgb, selected_image_rgb), axis=0)
+                    # inputY
+                    batch_imputY = torch.split(imputY, 1, dim=0)
+                    selected_imageY = batch_imputY[i].squeeze().cpu().detach().numpy()
+                    selected_imageY_rgb = np.stack((selected_imageY, selected_imageY, selected_imageY), axis=-1)
+                    # concatenate
+                    concatenated_image = np.concatenate((first_batch_rgb, selected_imageY_rgb, selected_image_rgb), axis=0)
                     if final_image is None:
                         final_image = concatenated_image
                     else:

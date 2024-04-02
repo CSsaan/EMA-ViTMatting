@@ -87,11 +87,11 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
             time_stamp = time.time()
             # data = data.unsqueeze(1) # torch.Size([8]) -> torch.Size([8, 1])
             # target = target.unsqueeze(1) # torch.Size([8]) -> torch.Size([8, 1])
-            imgs = data.to(device, non_blocking=False)
-            gt = target.to(device, non_blocking=False)
+            data = data.to(device, non_blocking=True)
+            target = target.to(device, non_blocking=True)
             
             learning_rate = get_learning_rate(step_train)
-            _, _loss = model.update(imgs, gt, epoch, batch_size, learning_rate, training=True)
+            _, _loss = model.update(data, target, epoch, batch_size, learning_rate, training=True)
             train_loss += _loss
             train_time_interval = time.time() - time_stamp
             time_stamp = time.time()
@@ -101,7 +101,7 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
             postfix = {
             'epoch': epoch,
             'progress': '{}/{}'.format(i, args.step_per_epoch),
-            'time': '{:.2f}+{:.2f}'.format(data_time_interval, train_time_interval),
+            'time': 'train:{:.2f}+continental:{:.2f}'.format(train_time_interval, data_time_interval),
             'loss': '{:.4f}'.format(train_loss.item()/(i+1))
             }
             pbar_batch.set_postfix(postfix)  
@@ -109,8 +109,8 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
             #     print('epoch:{} {}/{} time:{:.2f}+{:.2f} loss:{:.4e}'.format(epoch, i, args.step_per_epoch, data_time_interval, train_time_interval, train_loss/i))
             step_train += 1
         
-        if epoch % 1 == 0:
-            evaluate(model, val_data, epoch, local_rank, epoch, batch_size)
+        if epoch % 3 == 0:
+            evaluate(model, val_data, epoch, local_rank, batch_size)
 
         if(train_loss/step_train < min_loss):
             model.save_model(epoch, local_rank)
@@ -121,7 +121,7 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
         if(args.use_distribute):
             dist.barrier()
 
-def evaluate(model, val_data, nr_eval, local_rank, epoch, batch_size):
+def evaluate(model, val_data, epoch, local_rank, batch_size):
     if local_rank == 0:
         writer_val = SummaryWriter('log/validate_EMA-Matting')
 
@@ -129,18 +129,18 @@ def evaluate(model, val_data, nr_eval, local_rank, epoch, batch_size):
     for _, imgs in enumerate(val_data):
         data = imgs[0] # torch.Size([8]) -> torch.Size([8, 1])
         target = imgs[1] # torch.Size([8]) -> torch.Size([8, 1])
-        imgs = data.to(device, non_blocking=True)
-        gt = target.to(device, non_blocking=True)
+        data = data.to(device, non_blocking=True)
+        target = target.to(device, non_blocking=True)
         with torch.no_grad():
-            pred, _loss = model.update(imgs, gt, epoch, batch_size, training=False)
+            pred, _loss = model.update(data, target, epoch, batch_size, training=False)
             loss = _loss
         # for j in range(gt.shape[0]):
         #     loss.append(-10 * math.log10(((gt[j] - pred[j]) * (gt[j] - pred[j])).mean().cpu().item()))
    
     
     if local_rank == 0:
-        print(str(nr_eval), loss)
-        writer_val.add_scalar('test_loss', loss, nr_eval)
+        print(str(epoch), loss)
+        writer_val.add_scalar('test_loss', loss, epoch)
         
 if __name__ == "__main__":    
     print_cuda()
