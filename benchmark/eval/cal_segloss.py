@@ -1,3 +1,4 @@
+import cv2
 import torch
 
 class IoULoss(torch.nn.Module):
@@ -29,13 +30,12 @@ class DiceLoss(torch.nn.Module):
         return loss
     
 if __name__ == '__main__':
-    # 假设有两张图像 predict 和 alpha，均为 torch.Tensor 类型
-    predict = torch.randn(1, 1, 320, 320)
-    alpha = predict
-    # alpha = torch.randn(1, 1, 320, 320)
-
-    # predict = torch.zeros(1, 1, 320, 320)
-    # alpha = torch.ones(1, 1, 320, 320)
+    # opencv加载本地灰度图像,并转为为tensor格式的(1,1,w,h)形状
+    alpha = cv2.imread('data/AIM500/test/mask/o_dc288b1a.png', cv2.IMREAD_GRAYSCALE)
+    # 调整形状为(1, 1, H, W)
+    alpha = torch.from_numpy(alpha).unsqueeze(0).unsqueeze(0).float()
+    predict = alpha.clone()
+    alpha[:, :, :predict.size()[3]//4, :] = 0
     
     # 实例化 DiceLoss、IoULoss 类
     Dice = DiceLoss().to(predict.device)
