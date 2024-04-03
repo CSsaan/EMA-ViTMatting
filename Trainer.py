@@ -90,7 +90,7 @@ class LoadModel:
         preds = self.net(input)
         return preds
     
-    def update(self, inputX, imputY, epoch, batch_size, learning_rate=0.001, training=True):
+    def update(self, inputX, imputY, epoch, i, batch_size, learning_rate=0.001, training=True):
         for param_group in self.optimG.param_groups:
             param_group['lr'] = learning_rate
         if training:
@@ -103,7 +103,7 @@ class LoadModel:
             loss_mse = (self.loss(pred.unsqueeze(1), imputY, inputX)) # b w h -> b c w h
 
             # 保存每个batch结果图
-            if(epoch % 2 == 0):
+            if(epoch % 2 == 0 and i == 1):
                 final_image = None
                 for i in range(batch_size):
                     first_batch_rgb = inputX[i].permute(1, 2, 0).cpu().detach().numpy()
@@ -134,25 +134,26 @@ class LoadModel:
                 loss_mse = (self.loss(pred.unsqueeze(1), imputY, inputX))
 
                 # 保存每个batch结果图
-                final_image = None
-                for i in range(batch_size):
-                    first_batch_rgb = inputX[i].permute(1, 2, 0).cpu().detach().numpy()
-                    first_batch_rgb = cv2.cvtColor(first_batch_rgb, cv2.COLOR_RGB2BGR)
-                    # output
-                    batch_list = torch.split(pred, 1, dim=0)
-                    selected_image = batch_list[i].squeeze().cpu().detach().numpy()
-                    selected_image_rgb = np.stack((selected_image, selected_image, selected_image), axis=-1)
-                    # inputY
-                    batch_imputY = torch.split(imputY, 1, dim=0)
-                    selected_imageY = batch_imputY[i].squeeze().cpu().detach().numpy()
-                    selected_imageY_rgb = np.stack((selected_imageY, selected_imageY, selected_imageY), axis=-1)
-                    # concatenate
-                    concatenated_image = np.concatenate((first_batch_rgb, selected_imageY_rgb, selected_image_rgb), axis=0)
-                    if final_image is None:
-                        final_image = concatenated_image
-                    else:
-                        final_image = np.concatenate((final_image, concatenated_image), axis=1)
-                cv2.imwrite('result/batch_result_test.png', final_image*255)
+                if(i == 1):
+                    final_image = None
+                    for i in range(batch_size):
+                        first_batch_rgb = inputX[i].permute(1, 2, 0).cpu().detach().numpy()
+                        first_batch_rgb = cv2.cvtColor(first_batch_rgb, cv2.COLOR_RGB2BGR)
+                        # output
+                        batch_list = torch.split(pred, 1, dim=0)
+                        selected_image = batch_list[i].squeeze().cpu().detach().numpy()
+                        selected_image_rgb = np.stack((selected_image, selected_image, selected_image), axis=-1)
+                        # inputY
+                        batch_imputY = torch.split(imputY, 1, dim=0)
+                        selected_imageY = batch_imputY[i].squeeze().cpu().detach().numpy()
+                        selected_imageY_rgb = np.stack((selected_imageY, selected_imageY, selected_imageY), axis=-1)
+                        # concatenate
+                        concatenated_image = np.concatenate((first_batch_rgb, selected_imageY_rgb, selected_image_rgb), axis=0)
+                        if final_image is None:
+                            final_image = concatenated_image
+                        else:
+                            final_image = np.concatenate((final_image, concatenated_image), axis=1)
+                    cv2.imwrite('result/batch_result_test.png', final_image*255)
 
                 return pred, loss_mse
 
