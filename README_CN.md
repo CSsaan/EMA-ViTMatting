@@ -41,8 +41,20 @@ pip install -r requirements.txt
 ## 🚀 快速开始
 
 #### 训练脚本:
+
+数据集目录结构：
+data
+└── AIM500
+    ├── train
+    │   ├── original
+    │   └── mask
+    └── test
+        ├── original
+        └── mask
+```
+
 ```bash
-python train.py --use_model_name 'MobileViT' --reload_model False --local_rank 0 --world_size 4 --batch_size 16 --data_path 'data/classification/train' --use_distribute False
+python train.py --use_model_name 'MobileViT' --reload_model False --local_rank 0 --world_size 4 --batch_size 16 --data_path '/data/AIM500' --use_distribute False
 ```
 
 #### 测试脚本:

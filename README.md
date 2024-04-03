@@ -43,15 +43,28 @@ pip install -r requirements.txt
 ## 🚀 Quick Start
 
 #### train script:
+
+```
+Dataset directory structure：
+data
+└── AIM500
+    ├── train
+    │   ├── original
+    │   └── mask
+    └── test
+        ├── original
+        └── mask
+```
+
 ```bash
-python train.py --use_model_name 'MobileViT' --reload_model False --local_rank 0 --world_size 4 --batch_size 16 --data_path 'data/classification/train' --use_distribute False
+python train.py --use_model_name 'MobileViT' --reload_model False --local_rank 0 --world_size 4 --batch_size 16 --data_path '/data/AIM500' --use_distribute False
 ```
 * `--use_model_name 'MobileViT'`: The name of the model to load
 * `--reload_model False`: Model checkpoint continuation training
 * `--local_rank 0`: The local rank of the current process
 * `--world_size 4`: The total number of processes
 * `--batch_size 16`: Batch size
-* `--data_path 'data/classification/train'`: Data path
+* `--data_path '/data/AIM500'`: Data path
 * `--use_distribute False`: Whether to use distributed training
 
 #### test script:

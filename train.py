@@ -51,14 +51,14 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
     step_train, step_eval, best = 0, 0, 0
 
     # --------- AIM-500 数据集加载 -----------------
-    dataset = AIM500Dataset('train', root_dir=os.getcwd()+'/data/AIM500')
+    dataset = AIM500Dataset('train', root_dir=os.getcwd()+data_path)
     if(args.use_distribute):
         print('DataLoader use distribute.')
         sampler = DistributedSampler(dataset)
         train_data = DataLoader(dataset, batch_size=batch_size, num_workers=world_size, pin_memory=True, drop_last=True, shuffle=True, sampler=sampler)
     else:
         train_data = DataLoader(dataset, batch_size=batch_size, num_workers=world_size, pin_memory=True, drop_last=True, shuffle=True)
-    dataset_val = AIM500Dataset('test', root_dir=os.getcwd()+'/data/AIM500')
+    dataset_val = AIM500Dataset('test', root_dir=os.getcwd()+data_path)
     val_data = DataLoader(dataset_val, batch_size=batch_size, num_workers=world_size, pin_memory=True, drop_last=True, shuffle=True)
     # -----------------------------------------------------
     print("train_data.__len__(), val_data.__len__():", dataset.__len__(), dataset_val.__len__())
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     parser.add_argument('--local_rank', default=0, type=int, help='local rank')
     parser.add_argument('--world_size', default=8, type=int, help='world size')
     parser.add_argument('--batch_size', default=16, type=int, help='batch size')
-    parser.add_argument('--data_path', default= "data/classification/train", type=str, help='data path of vimeo90k')
+    parser.add_argument('--data_path', default= "/data/AIM500", type=str, help='data path of AIM_500 dataset')
     parser.add_argument('--use_distribute', default= False, type=bool, help='train on distribute Devices by torch.distributed')
     args = parser.parse_args()
 
