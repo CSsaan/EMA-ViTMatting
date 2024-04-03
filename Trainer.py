@@ -99,7 +99,7 @@ class LoadModel:
 
         if training:
             pred = self.net(inputX)
-            loss_mse = (self.loss(pred.unsqueeze(1), imputY))
+            loss_mse = (self.loss(pred.unsqueeze(1), imputY, inputX)) # b w h -> b c w h
 
             # 保存每个batch结果图
             if(epoch % 2 == 0):

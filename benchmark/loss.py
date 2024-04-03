@@ -1,18 +1,16 @@
 import torch
 import torch.nn.functional as F
 import kornia
-from eval import LapLoss, IoULoss, DiceLoss
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from .eval import LapLoss, IoULoss, DiceLoss
 
 
-    
 class MattingLoss(torch.nn.Module):
     def __init__(self):
         super(MattingLoss, self).__init__()
-        self.Lap = LapLoss(max_levels=5).to(predict.device)
-        self.IoU = IoULoss().to(predict.device)
-        self.Dice = DiceLoss().to(predict.device)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.Lap = LapLoss(max_levels=5).to(device)
+        self.IoU = IoULoss().to(device)
+        self.Dice = DiceLoss().to(device)
 
     def mse_loss(self, predict, alpha):
         weighted = torch.ones(alpha.shape).to(predict.device)
