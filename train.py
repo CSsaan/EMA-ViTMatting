@@ -109,8 +109,10 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
             #     print('epoch:{} {}/{} time:{:.2f}+{:.2f} loss:{:.4e}'.format(epoch, i, args.step_per_epoch, data_time_interval, train_time_interval, train_loss/i))
             step_train += 1
         
+        i = 1
         if epoch % 2 == 0:
             evaluate(model, val_data, epoch, i, local_rank, batch_size)
+            i = 0
 
         if(train_loss/step_train < min_loss):
             model.save_model(epoch, local_rank)
@@ -148,11 +150,11 @@ if __name__ == "__main__":
     print_cuda()
     parser = argparse.ArgumentParser()
     parser.add_argument('--use_model_name', default='MobileViT', type=str, help='name of model to use') # 'GoogLeNet'、 'ViT'、 'MobileViT'
-    parser.add_argument('--reload_model', default=False, type=bool, help='reload model')
-    parser.add_argument('--reload_model_name', default='MobileViT_80', type=str, help='name of reload model')
+    parser.add_argument('--reload_model', default=True, type=bool, help='reload model')
+    parser.add_argument('--reload_model_name', default='MobileViT_20', type=str, help='name of reload model')
     parser.add_argument('--local_rank', default=0, type=int, help='local rank')
     parser.add_argument('--world_size', default=8, type=int, help='world size')
-    parser.add_argument('--batch_size', default=16, type=int, help='batch size')
+    parser.add_argument('--batch_size', default=32, type=int, help='batch size')
     parser.add_argument('--data_path', default= "/data/AIM500", type=str, help='data path of AIM_500 dataset')
     parser.add_argument('--use_distribute', default= False, type=bool, help='train on distribute Devices by torch.distributed')
     args = parser.parse_args()
