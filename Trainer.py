@@ -131,7 +131,7 @@ class LoadModel:
         else: 
             with torch.no_grad():
                 pred = self.net(inputX)
-                loss_mse = (self.loss(pred.unsqueeze(1), imputY))
+                loss_mse = (self.loss(pred.unsqueeze(1), imputY, inputX))
 
                 # 保存每个batch结果图
                 final_image = None

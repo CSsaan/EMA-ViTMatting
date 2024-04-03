@@ -8,7 +8,7 @@ class MattingLoss(torch.nn.Module):
     def __init__(self):
         super(MattingLoss, self).__init__()
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.Lap = LapLoss(max_levels=5).to(device)
+        self.Lap = LapLoss(max_levels=2).to(device)
         self.IoU = IoULoss().to(device)
         self.Dice = DiceLoss().to(device)
 
@@ -39,7 +39,7 @@ class MattingLoss(torch.nn.Module):
         # L_composition
         com_loss = self.composition_loss(predict, alpha, img)
 
-        loss_all = (l1 + mse) + l1_sobel + (Lap_loss + iou_loss + dice_loss) + com_loss
+        loss_all = (l1 + mse) + 2.0*l1_sobel + (0.5*Lap_loss + iou_loss + dice_loss) + com_loss
         return loss_all
 
 if __name__ == '__main__':

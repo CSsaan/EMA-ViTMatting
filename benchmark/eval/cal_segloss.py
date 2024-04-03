@@ -7,8 +7,8 @@ class IoULoss(torch.nn.Module):
         self.eps = eps
 
     def forward(self, pred, target):
-        pred = pred > 0.5
-        target = target > 0.5
+        pred = pred > 0.
+        target = target > 0.
         intersection = torch.sum(pred * target)
         union = torch.sum(pred) + torch.sum(target) - intersection
         iou = (intersection + self.eps) / (union + self.eps)
@@ -21,8 +21,8 @@ class DiceLoss(torch.nn.Module):
         self.eps = eps
 
     def forward(self, pred, target):
-        pred = pred > 0.5
-        target = target > 0.5
+        pred = pred > 0.
+        target = target > 0.
         intersection = torch.sum(pred * target)
         union = torch.sum(pred) + torch.sum(target)
         dice_coeff = (2. * intersection + self.eps) / (union + self.eps)
