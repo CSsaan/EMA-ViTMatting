@@ -5,25 +5,34 @@ from torch.autograd import Variable
 
 # Laplacian pyramid loss
 
-def pyr_downsample(x):
-    return x[:, :, ::2, ::2]
+def gauss_convolution(img, kernel):
+    B, C, H, W = img.shape
+    img = img.reshape(B * C, 1, H, W)
+    img = F.pad(img, (2, 2, 2, 2), mode='reflect')
+    img = F.conv2d(img, kernel)
+    img = img.reshape(B, C, H, W)
+    return img
 
+def pyr_downsample(img, kernel):
+    img = gauss_convolution(img, kernel)
+    img = img[:, :, ::2, ::2]
+    return img
 
-def pyr_upsample(x, kernel, op0, op1):
-    n_channels, _, kw, kh = kernel.shape
-    return F.conv_transpose2d(x, kernel, groups=n_channels, stride=2, padding=2, output_padding=(op0, op1))
+def pyr_upsample(img, kernel):
+    B, C, H, W = img.shape
+    out = torch.zeros((B, C, H * 2, W * 2), device=img.device, dtype=img.dtype)
+    out[:, :, ::2, ::2] = img * 4
+    out = gauss_convolution(out, kernel)
+    return out
 
-def gauss_kernel5(channels=3, cuda=True):
-    kernel = torch.FloatTensor([[1., 4., 6., 4., 1],
+def gauss_kernel5(channels=3, device='cpu', dtype=torch.float32):
+    kernel = torch.tensor([[1., 4., 6., 4., 1],
                            [4., 16., 24., 16., 4.],
                            [6., 24., 36., 24., 6.],
                            [4., 16., 24., 16., 4.],
-                           [1., 4., 6., 4., 1.]])
+                           [1., 4., 6., 4., 1.]], device=device, dtype=dtype)
     kernel /= 256.
     kernel = kernel.repeat(channels, 1, 1, 1)
-    # print(kernel)
-    if cuda:
-        kernel = kernel.cuda()
     return Variable(kernel, requires_grad=False)
 
 
@@ -45,34 +54,19 @@ def build_gauss_kernel(size=5, sigma=1.0, n_channels=1, cuda=False):
     return Variable(kernel, requires_grad=False)
 
 
-def conv_gauss(img, kernel):
-    """ convolve img with a gaussian kernel that has been built with build_gauss_kernel """
-    n_channels, _, kw, kh = kernel.shape
-    img = F.pad(img, (kw // 2, kh // 2, kw // 2, kh // 2), mode='replicate')
-    return F.conv2d(img, kernel, groups=n_channels)
-
-
-def laplacian_pyramid(img, kernel, max_levels=5):
-    current = img
-    pyr = []
-
-    for level in range(max_levels-1):
-        filtered = conv_gauss(current, kernel)
-        diff = current - filtered
-        pyr.append(diff)
-        current = F.avg_pool2d(filtered, 2)
-
-    pyr.append(current) # high -> low
-    return pyr
+def crop_to_even_size(img):
+    H, W = img.shape[2:]
+    H = H - H % 2
+    W = W - W % 2
+    return img[:, :, :H, :W]
 
 def laplacian_pyramid_expand(img, kernel, max_levels=5):
     current = img
     pyr = []
-    for level in range(max_levels):
-        # print("level: ", level)
-        filtered = conv_gauss(current, kernel)
-        down = pyr_downsample(filtered)
-        up = pyr_upsample(down, 4*kernel, 1-filtered.size(2)%2, 1-filtered.size(3)%2)
+    for _level in range(max_levels):
+        current = crop_to_even_size(current)
+        down = pyr_downsample(current, kernel)
+        up = pyr_upsample(down, kernel)
 
         diff = current - up
         pyr.append(diff)
@@ -86,22 +80,22 @@ class LapLoss(torch.nn.Module):
         self.max_levels = max_levels
         self._gauss_kernel = None
 
-    def forward(self, input, target):
-        if self._gauss_kernel is None or self._gauss_kernel.shape[1] != input.shape[1]:
-            self._gauss_kernel = gauss_kernel5(input.shape[1], cuda=input.is_cuda)
+    def forward(self, predict, target):
+        if self._gauss_kernel is None or self._gauss_kernel.shape[1] != predict.shape[1]:
+            self._gauss_kernel = gauss_kernel5(predict.shape[1], device=predict.device, dtype=predict.dtype)
 
-        pyr_input = laplacian_pyramid_expand(input, self._gauss_kernel, self.max_levels)
+        pyr_predict = laplacian_pyramid_expand(predict, self._gauss_kernel, self.max_levels)
         pyr_target = laplacian_pyramid_expand(target, self._gauss_kernel, self.max_levels)
         weights = [1, 2, 4, 8, 16]
 
-        # return sum(F.l1_loss(a, b) for a, b in zip(pyr_input, pyr_target))
-        return sum(weights[i] * F.l1_loss(a, b) for i, (a, b) in enumerate(zip(pyr_input, pyr_target))).mean() 
+        # return sum(F.l1_loss(a, b) for a, b in zip(pyr_predict, pyr_target))
+        return sum(weights[i] * F.l1_loss(a, b) for i, (a, b) in enumerate(zip(pyr_predict, pyr_target))).mean() 
     
 if __name__ == '__main__':
     # 假设有两张图像 predict 和 alpha，均为 torch.Tensor 类型
     predict = torch.randn(1, 1, 320, 320)
-    # alpha = predict
-    alpha = torch.randn(1, 1, 320, 320)
+    alpha = predict
+    # alpha = torch.randn(1, 1, 320, 320)
 
     # predict = torch.zeros(1, 1, 320, 320)
     # alpha = torch.ones(1, 1, 320, 320)
