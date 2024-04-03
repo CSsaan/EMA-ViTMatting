@@ -1,6 +1,5 @@
 
 import cv2
-import torch
 from torchvision import transforms
 import onnxruntime
 import numpy as np
@@ -12,6 +11,21 @@ config_path = CURRENT_DIR.rsplit('/', 1)[0]  # 上1级目录
 sys.path.append(config_path)
 from config import *
 (w, h) = load_model_parameters('benchmark/config/model_MobileViT_parameters.yaml')['image_size']
+
+# 定义Normalize函数
+def normalize_image(image, mean, std):
+    image = image / 255.0  # 将图像像素值归一化到[0, 1]
+    image = (image - mean) / std  # 根据均值和标准差进行归一化
+    return image.astype(np.float32)
+
+def preprocess_image(image):
+    # Resize图像
+    image = cv2.resize(image, (w, h))
+    # 转换为Tensor并归一化
+    image = normalize_image(image, [0.50542366, 0.46995255, 0.44692866], [0.28501507, 0.27542947, 0.28659645])
+    image = np.transpose(image, (2, 0, 1))  # 调整维度顺序
+    image = np.expand_dims(image, axis=0)  # 添加batch维度
+    return image
 
 def onnx_inference(model_path, input):
     # 使用onnxruntime-gpu在GPU上进行推理
@@ -43,6 +57,7 @@ def onnx_inference(model_path, input):
         outputs = outputs.squeeze()
         outputs = (outputs * 255).astype(np.uint8) 
         cv2.imwrite(f"result/output_{i}.png", outputs)
+        print(f"output_{i}.png saved.")
 
 
 if __name__ == "__main__":
@@ -52,17 +67,7 @@ if __name__ == "__main__":
     # 加载图片
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # 将图像从BGR转换为RGB
-    # 定义预处理操作
-    preprocess = transforms.Compose([
-        transforms.ToPILImage(),  # 转换为PIL图像
-        transforms.Resize((w, h)),  # 与训练时相同的Resize大小
-        transforms.ToTensor(),  # 转换为Tensor
-        transforms.Normalize(mean=[0.50542366, 0.46995255, 0.44692866], std=[0.28501507, 0.27542947, 0.28659645])  # 与训练时相同的Normalize参数
-    ])
-    # 对图片进行预处理
-    input_tensor = preprocess(image).unsqueeze(0)  # 添加batch维度
-    # tensor转为numpy
-    input = input_tensor.numpy()
-
-    # input = np.random.randn(2, 3, 224, 224).astype(np.float32)
-    onnx_inference(model_path, input)
+    # 输入预处理
+    image = preprocess_image(image)
+    # 推理
+    onnx_inference(model_path, image)
