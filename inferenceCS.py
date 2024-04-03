@@ -1,15 +1,16 @@
 import cv2
+import os
 import torch
 from torchvision import transforms
 from config import *
 import numpy as np
 import argparse
 
-def main(image_path, model_name):
+def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # 加载图片
-    image = cv2.imread(image_path)
+    image = cv2.imread(args.image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # 将图像从BGR转换为RGB
 
     # 定义预处理操作
@@ -27,7 +28,7 @@ def main(image_path, model_name):
     model = MODEL_CONFIG['MobileViT']
     model.to(device)
 
-    checkpoint = torch.load(f'ckpt/{model_name}.pkl', map_location=device)
+    checkpoint = torch.load(f'ckpt/{args.model_name}.pkl', map_location=device)
     model.load_state_dict(checkpoint, False)
     model.eval()
 
@@ -35,16 +36,21 @@ def main(image_path, model_name):
     output = model(input_tensor)
     # 转为单通道8位的灰度图保存
     output = output.squeeze().cpu().detach().numpy()
-    output = (output * 255).astype(np.uint8)
-    cv2.imwrite('output.jpg', output)
+    output = (output * 255).astype(np.uint8)  
+    # 保存结果
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+    output_path = os.path.join(args.output_dir, os.path.splitext(os.path.basename(args.image_path))[0] + '.png')
+    cv2.imwrite(output_path, output)
 
-    print("Inference completed. Output image saved as 'output.jpg'.")
+    print(f"Inference completed. Output image saved as '{output_path}'.")
 
 if __name__ == '__main__':
     # python inferenceCS.py --image_path data/AIM500/test/original/o_dc288b1a.jpg --model_name MobileViT_194_pure
     parser = argparse.ArgumentParser()
     parser.add_argument('--image_path', type=str, default="data/AIM500/test/mask/o_dc288b1a.png", help='Path to the input image')
     parser.add_argument('--model_name', type=str, default="MobileViT_194_pure", help='Name of the model to use for inference')
+    parser.add_argument('--output_dir', type=str, default='./result', help="Path to the output directory")
     args = parser.parse_args()
 
-    main(args.image_path, args.model_name)
+    main(args)

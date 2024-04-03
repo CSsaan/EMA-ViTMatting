@@ -1,12 +1,13 @@
 import torch
-import torch.nn.functional as F
+import os
+import cv2
+import numpy as np
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import AdamW
 from benchmark.loss import *
 from torchsummary import summary
 from config import *
-import os
-import cv2
+
     
 class LoadModel:
     def __init__(self, local_rank, model_name='GoogLeNet', use_distribute=False):
@@ -121,7 +122,7 @@ class LoadModel:
                         final_image = concatenated_image
                     else:
                         final_image = np.concatenate((final_image, concatenated_image), axis=1)
-                cv2.imwrite('batch_result_train.png', final_image*255)
+                cv2.imwrite('result/batch_result_train.png', final_image*255)
 
             self.optimG.zero_grad()
             loss_mse.backward()
@@ -151,7 +152,7 @@ class LoadModel:
                         final_image = concatenated_image
                     else:
                         final_image = np.concatenate((final_image, concatenated_image), axis=1)
-                cv2.imwrite('batch_result_test.png', final_image*255)
+                cv2.imwrite('result/batch_result_test.png', final_image*255)
 
                 return pred, loss_mse
 

@@ -6,8 +6,8 @@ data/classification/*
 model/onnx/*onnx
 *.pth
 test.py
-*.png
-*.jpg
+result/*.jpg
+result/*.png
 
 
 # Byte-compiled / optimized / DLL files
