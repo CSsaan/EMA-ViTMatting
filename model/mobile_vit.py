@@ -194,7 +194,7 @@ class UpsampleBlock2(nn.Module):
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
             nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=bias),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(True),
+            nn.SiLU(),
         )
 
     def forward(self, x):
@@ -215,15 +215,14 @@ class MobileViT(nn.Module):
         expansion=4,
         kernel_size=3,
         patch_size=(2, 2),
-        depths=(2, 4, 3)
+        depths=(2, 4, 3),
+        use_cat=False
     ):
         super().__init__()
         assert len(dims) == 3, 'dims must be a tuple of 3'
         assert len(depths) == 3, 'depths must be a tuple of 3'
 
-        self.re0 = None
-        self.re1 = None
-        self.re2 = None
+        self.use_cat = use_cat
 
         ih, iw = image_size
         ph, pw = patch_size
@@ -276,47 +275,53 @@ class MobileViT(nn.Module):
             nn.ConvTranspose2d(channels[1], channels[0], kernel_size=2, stride=2, padding=0),
         )
 
-        # self.up1 = UpsampleBlock(channels[9], channels[7])
-        # self.up2 = UpsampleBlock(channels[7], channels[5])
-        # self.up3 = UpsampleBlock(channels[5], channels[3])
-        # self.up4 = UpsampleBlock(channels[3], channels[1])
-        # self.up5 = UpsampleBlock(channels[1], channels[0])
-        
-        self.up1 = UpsampleBlock2(channels[9], channels[7]//2, bias=False)
-        self.up2 = UpsampleBlock2(channels[7], channels[5]//2, bias=False)
-        self.up3 = UpsampleBlock2(channels[5], channels[3]//2, bias=False)
-        self.up4 = UpsampleBlock2(channels[3], channels[1]//2, bias=False)
-        self.up5 = UpsampleBlock2(channels[1], channels[0])
+        if(not self.use_cat): # add()
+            self.up1 = UpsampleBlock(channels[9], channels[7])
+            self.up2 = UpsampleBlock(channels[7], channels[5])
+            self.up3 = UpsampleBlock(channels[5], channels[3])
+            self.up4 = UpsampleBlock(channels[3], channels[1])
+            self.up5 = UpsampleBlock(channels[1], channels[0])
+        else: # cat()
+            self.up1 = UpsampleBlock2(channels[9], channels[7]//2, bias=False)
+            self.up2 = UpsampleBlock2(channels[7], channels[5]//2, bias=False)
+            self.up3 = UpsampleBlock2(channels[5], channels[3]//2, bias=False)
+            self.up4 = UpsampleBlock2(channels[3], channels[1]//2, bias=False)
+            self.up5 = UpsampleBlock2(channels[1], channels[0])
 
         self.to_logits = nn.Sequential(
             Reduce('b c h w -> b h w', 'mean'),
         )
 
     def forward(self, x):
-        # self.re256 = nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
         x = self.conv1(x) # [1, 3, 256, 256] -> [1, 16, 128, 128]
         for idx, conv in enumerate(self.stem):
             x = conv(x) # [1, 32, 128, 128] [1, 48, 64, 64] [1, 48, 64, 64] [1, 48, 64, 64]
             if idx == 0:
-                self.re128 = nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
+                self.re128 = x if not self.use_cat else nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
         
-        self.re64 = nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
+        self.re64 = x if not self.use_cat else nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
         for idx, (conv, attn) in enumerate(self.trunk):
             x = conv(x) # [1, 64, 32, 32] [1, 80, 16, 16] [1, 96, 8, 8]
             x = attn(x) # (与上面同尺寸)
             # print(idx, " : ",x.size())
             if idx == 0:
-                self.re32 = nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
+                self.re32 = x if not self.use_cat else nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
             elif idx == 1:
-                self.re16 = nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
+                self.re16 = x if not self.use_cat else nn.Conv2d(in_channels=x.shape[1], out_channels=x.shape[1]//2, kernel_size=1).to(x.device)(x) # 添加1*1卷积，只修改通道数
 
-
-        # 反向编码上采样, 改add为cat
-        x = torch.cat((self.up1(x), self.re16), dim=1) # [8, 96, 8, 8]  ->  [1, 80, 16, 16] [1, 64, 32, 32] [1, 48, 64, 64] [1, 32, 128, 128] [1, 256, 256]
-        x = torch.cat((self.up2(x), self.re32), dim=1)
-        x = torch.cat((self.up3(x), self.re64), dim=1)
-        x = torch.cat((self.up4(x), self.re128), dim=1)
-        x = self.up5(x)
+        if(not self.use_cat): # add()
+            x = self.up1(x) + self.re16 # [8, 96, 8, 8]  ->  [1, 80, 16, 16] [1, 64, 32, 32] [1, 48, 64, 64] [1, 32, 128, 128] [1, 256, 256]
+            x = self.up2(x) + self.re32
+            x = self.up3(x) + self.re64
+            x = self.up4(x) + self.re128
+            x = self.up5(x)
+        else:
+            # 反向编码上采样, 改add为cat
+            x = torch.cat((self.up1(x), self.re16), dim=1) # [8, 96, 8, 8]  ->  [1, 80, 16, 16] [1, 64, 32, 32] [1, 48, 64, 64] [1, 32, 128, 128] [1, 256, 256]
+            x = torch.cat((self.up2(x), self.re32), dim=1)
+            x = torch.cat((self.up3(x), self.re64), dim=1)
+            x = torch.cat((self.up4(x), self.re128), dim=1)
+            x = self.up5(x)
 
         return self.to_logits(x)
 
@@ -325,16 +330,19 @@ def summary_model(model, input_x):
     print(summary(model, input_x))
 
 if __name__ == '__main__':
+
+    (w, h) = (256, 256)
+
     mbvit_xs = MobileViT(
-        image_size = (320, 320),
+        image_size = (w, h),
         dims = [144, 180, 216],
         channels = [16, 32, 48, 48, 64, 64, 80, 80, 96, 96],
-        depths = (8, 16, 12)
+        depths = (8, 16, 12),
+        use_cat=False
     )
-    img = torch.randn(8, 3, 320, 320)
+    img = torch.randn(8, 3, w, h)
     pred = mbvit_xs(img) # (1, 1000)
     print(f"pred:{pred.size()}")
-
 
     # # (1). summary打印模型网络结构
     # input_x = (3, 256, 256)

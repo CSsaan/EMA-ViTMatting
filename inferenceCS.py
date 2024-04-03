@@ -43,8 +43,8 @@ def main(image_path, model_name):
 if __name__ == '__main__':
     # python inferenceCS.py --image_path data/AIM500/test/original/o_dc288b1a.jpg --model_name MobileViT_194_pure
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_path', type=str, help='Path to the input image')
-    parser.add_argument('--model_name', type=str, help='Name of the model to use for inference')
+    parser.add_argument('--image_path', type=str, default="data/AIM500/test/mask/o_dc288b1a.png", help='Path to the input image')
+    parser.add_argument('--model_name', type=str, default="output.jpg", help='Name of the model to use for inference')
     args = parser.parse_args()
 
     main(args.image_path, args.model_name)
