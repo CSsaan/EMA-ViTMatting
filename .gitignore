@@ -8,6 +8,7 @@ model/onnx/*onnx
 test.py
 result/*.jpg
 result/*.png
+onnx_demo/*.onnx
 
 
 # Byte-compiled / optimized / DLL files

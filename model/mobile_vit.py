@@ -341,7 +341,7 @@ if __name__ == '__main__':
         use_cat=False
     )
     img = torch.randn(8, 3, w, h)
-    pred = mbvit_xs(img) # (1, 1000)
+    pred = mbvit_xs(img) # (1, 256, 256)
     print(f"pred:{pred.size()}")
 
     # # (1). summary打印模型网络结构

@@ -6,6 +6,14 @@ from config import *
 import numpy as np
 import argparse
 
+import sys
+import os
+CURRENT_DIR = os.path.split(os.path.abspath(__file__))[0]  # 当前目录
+config_path = CURRENT_DIR.rsplit('/', 1)[0]  # 上1级目录
+sys.path.append(config_path)
+from config import *
+(w, h) = load_model_parameters('benchmark/config/model_MobileViT_parameters.yaml')['image_size']
+
 def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -16,7 +24,7 @@ def main(args):
     # 定义预处理操作
     preprocess = transforms.Compose([
         transforms.ToPILImage(),  # 转换为PIL图像
-        transforms.Resize((320, 320)),  # 与训练时相同的Resize大小
+        transforms.Resize((w, h)),  # 与训练时相同的Resize大小
         transforms.ToTensor(),  # 转换为Tensor
         transforms.Normalize(mean=[0.50542366, 0.46995255, 0.44692866], std=[0.28501507, 0.27542947, 0.28659645])  # 与训练时相同的Normalize参数
     ])
