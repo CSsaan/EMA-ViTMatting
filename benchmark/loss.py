@@ -11,6 +11,8 @@ class MattingLoss(torch.nn.Module):
         self.Lap = LapLoss(max_levels=2).to(device)
         self.IoU = IoULoss().to(device)
         self.Dice = DiceLoss().to(device)
+        # 创建一个3x3的Laplacian算子
+        self.laplacian_kernel = kornia.filters.get_laplacian_kernel2d(kernel_size=(3,3))
 
     def mse_loss(self, predict, alpha):
         weighted = torch.ones(alpha.shape).to(predict.device)
@@ -34,13 +36,23 @@ class MattingLoss(torch.nn.Module):
         iou_loss = self.IoU(predict, alpha)
         dice_loss = self.Dice(predict, alpha)
         l1 = F.l1_loss(predict, alpha)
-        l1_sobel = F.l1_loss(kornia.filters.sobel(predict), kornia.filters.sobel(alpha))
+        l1_sobel = F.l1_loss(kornia.filters.laplacian(predict, 3), kornia.filters.laplacian(alpha, 3))
         mse = F.mse_loss(predict, alpha)
         # L_composition
         com_loss = self.composition_loss(predict, alpha, img)
-
         loss_all = (l1 + mse) + 2.0*l1_sobel + (0.5*Lap_loss + iou_loss + dice_loss) + com_loss
-        return loss_all
+        
+        loss_dict = {
+            'l1_loss': l1.item(),
+            'mse_loss': mse.item(),
+            'l1_sobel_loss': 2.0 * l1_sobel.item(),
+            'laplacian_loss': 0.5 * Lap_loss.item(),
+            'iou_loss': iou_loss.item(),
+            'dice_loss': dice_loss.item(),
+            'com_loss': com_loss.item(),
+            'loss_all': loss_all.item()
+        }
+        return loss_dict
 
 if __name__ == '__main__':
     # 假设有两张图像 predict 和 alpha，均为 torch.Tensor 类型

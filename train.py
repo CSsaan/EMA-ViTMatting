@@ -42,7 +42,7 @@ def get_learning_rate(step):
         mul = step / 2000
         # return 2e-4 * mul
     else:
-        mul = np.cos((step - 2000) / (300 * args.step_per_epoch - 2000) * np.pi) * 0.5 + 0.5
+        mul = np.cos((step - 2000) / (300 * args.step_per_epoch - 2000) * 10 * np.pi) * 0.5 + 0.5
     return (1e-4 - 1e-5) * mul + 1e-5
 
 def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_path):
@@ -79,7 +79,7 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
     for epoch in tqdm(range(start_epoch+1, 300), desc='Epoch'):
         if(args.use_distribute):
             sampler.set_epoch(epoch)
-        train_loss, train_acc, train_num = 0.0, 0.0, 0.0
+        train_loss, train_l1_loss, train_mse_loss, train_l1_sobel_loss, train_laplacian_loss, train_iou_loss, train_dice_loss, train_com_loss = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
         val_loss, val_acc, val_num = 0.0, 0.0, 0.0
         pbar_batch = tqdm(train_data, desc='Training')
         for i, (data, target) in enumerate(pbar_batch):
@@ -91,18 +91,33 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
             target = target.to(device, non_blocking=True)
             
             learning_rate = get_learning_rate(step_train)
-            _, _loss = model.update(data, target, epoch, i, batch_size, learning_rate, training=True)
-            train_loss += _loss
+            _, loss_dict = model.update(data, target, epoch, i, batch_size, learning_rate, training=True)
+            train_loss += loss_dict['loss_all']
+            train_l1_loss += loss_dict['loss_l1']
+            train_mse_loss += loss_dict['mse_loss']
+            train_l1_sobel_loss += loss_dict['l1_sobel_loss']
+            train_laplacian_loss += loss_dict['laplacian_loss']
+            train_iou_loss += loss_dict['iou_loss']
+            train_dice_loss += loss_dict['dice_loss']
+            train_com_loss += loss_dict['com_loss']
+
             train_time_interval = time.time() - time_stamp
             time_stamp = time.time()
             if step_train % 50 == 1 and local_rank == 0:
                 writer.add_scalar('learning_rate', learning_rate, step_train)
-                writer.add_scalar('train_loss', train_loss/(i+1), step_train)
+                writer.add_scalar('train_loss_all', train_loss/(i+1), step_train)
+                writer.add_scalar('train_l1_loss', train_l1_loss/(i+1), step_train)
+                writer.add_scalar('train_mse_loss', train_mse_loss/(i+1), step_train)
+                writer.add_scalar('train_l1_sobel_loss', train_l1_sobel_loss/(i+1), step_train)
+                writer.add_scalar('train_laplacian_loss', train_laplacian_loss/(i+1), step_train)
+                writer.add_scalar('train_iou_loss', train_iou_loss/(i+1), step_train)
+                writer.add_scalar('train_dice_loss', train_dice_loss/(i+1), step_train)
+                writer.add_scalar('train_com_loss', train_com_loss/(i+1), step_train)
             postfix = {
-            'epoch': epoch,
-            'progress': '{}/{}'.format(i, args.step_per_epoch),
-            'time': 'train:{:.2f}+continental:{:.2f}'.format(train_time_interval, data_time_interval),
-            'loss': '{:.4f}'.format(train_loss.item()/(i+1))
+                '[epoch]': epoch,
+                'progress': '{}/{}'.format(i, args.step_per_epoch),
+                'time': 'train:{:.2f}+continental:{:.2f}'.format(train_time_interval, data_time_interval),
+                'loss_all': '{:.4f}'.format(train_loss/(i+1)),
             }
             pbar_batch.set_postfix(postfix)  
             # if local_rank == 0:
@@ -110,14 +125,13 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
             step_train += 1
         
         i = 1
-        if epoch % 2 == 0:
+        if epoch % 10 == 0:
             evaluate(model, val_data, epoch, i, local_rank, batch_size)
             i = 0
 
         if(train_loss/step_train < min_loss):
             model.save_model(epoch, local_rank)
             min_loss = train_loss
-        # print(epoch, min_loss)
         
         # 分布式训练进程同步
         if(args.use_distribute):
@@ -134,8 +148,8 @@ def evaluate(model, val_data, epoch, i, local_rank, batch_size):
         data = data.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
         with torch.no_grad():
-            pred, _loss = model.update(data, target, epoch, i, batch_size, training=False)
-            loss = _loss
+            pred, loss_dict = model.update(data, target, epoch, i, batch_size, training=False)
+            loss = loss_dict['loss_all']
         # for j in range(gt.shape[0]):
         #     loss.append(-10 * math.log10(((gt[j] - pred[j]) * (gt[j] - pred[j])).mean().cpu().item()))
    
@@ -150,13 +164,13 @@ if __name__ == "__main__":
     print_cuda()
     parser = argparse.ArgumentParser()
     parser.add_argument('--use_model_name', default='MobileViT', type=str, help='name of model to use') # 'GoogLeNet'、 'ViT'、 'MobileViT'
-    parser.add_argument('--reload_model', default=True, type=bool, help='reload model')
+    parser.add_argument('--reload_model', default=False, type=bool, help='reload model')
     parser.add_argument('--reload_model_name', default='MobileViT_20', type=str, help='name of reload model')
     parser.add_argument('--local_rank', default=0, type=int, help='local rank')
     parser.add_argument('--world_size', default=8, type=int, help='world size')
-    parser.add_argument('--batch_size', default=32, type=int, help='batch size')
-    parser.add_argument('--data_path', default= "/data/AIM500", type=str, help='data path of AIM_500 dataset')
-    parser.add_argument('--use_distribute', default= False, type=bool, help='train on distribute Devices by torch.distributed')
+    parser.add_argument('--batch_size', default=24, type=int, help='batch size')
+    parser.add_argument('--data_path', default="/data/AIM500", type=str, help='data path of AIM_500 dataset')
+    parser.add_argument('--use_distribute', default=False, type=bool, help='train on distribute Devices by torch.distributed')
     args = parser.parse_args()
 
     # 分布式训练

@@ -174,15 +174,20 @@ class MobileViTBlock(nn.Module):
         x = self.conv4(x)
         return x
 
+# TODO: 对比上采样卷积效果
 class UpsampleBlock(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, bias=True):
         super(UpsampleBlock, self).__init__()
         self.conv_transpose = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2, padding=0)
         self.batch_norm = nn.BatchNorm2d(out_channels)
         self.silu = nn.SiLU()
+        self.conv = nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=bias)
 
     def forward(self, x):
         x = self.conv_transpose(x)
+        x = self.batch_norm(x)
+        x = self.silu(x)
+        x = self.conv(x)
         x = self.batch_norm(x)
         x = self.silu(x)
         return x
