@@ -22,7 +22,7 @@ def preprocess_image(image):
     # Resize图像
     image = cv2.resize(image, (w, h))
     # 转换为Tensor并归一化
-    image = normalize_image(image, [0.50542366, 0.46995255, 0.44692866], [0.28501507, 0.27542947, 0.28659645])
+    image = normalize_image(image, [0.49372172, 0.46933405, 0.44654398], [0.30379174, 0.29378528, 0.30067085])
     image = np.transpose(image, (2, 0, 1))  # 调整维度顺序
     image = np.expand_dims(image, axis=0)  # 添加batch维度
     return image

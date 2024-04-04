@@ -1,4 +1,3 @@
-import os
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
@@ -6,7 +5,10 @@ import numpy as np
 from tqdm import tqdm
 		
 import sys
-sys.path.append('../')
+import os
+# 获取当前文件所在目录的上2级目录
+config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(config_path)
 from config import *
 
 (w, h) = load_model_parameters('benchmark/config/model_MobileViT_parameters.yaml')['image_size']
@@ -29,7 +31,7 @@ class AIM500Dataset(Dataset):
         # Transformations for images and labels
         self.transform_image = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize((0.50542366, 0.46995255, 0.44692866), (0.28501507, 0.27542947, 0.28659645)),
+            transforms.Normalize((0.49372172, 0.46933405, 0.44654398), (0.30379174, 0.29378528, 0.30067085)),
             transforms.Resize((w, h)),  # 如果你需要调整图像大小
             # transforms.RandomHorizontalFlip(),  # 如果你需要随机水平翻转
             # transforms.RandomVerticalFlip(),  # 如果你需要随机垂直翻转
@@ -68,7 +70,7 @@ if __name__ == '__main__':
 
     # ---------------- 计算数据集的 Mean & Std -----------------
     if(choose_run == 1):
-        data_dir = 'C:/Users/11795/Desktop/PPM-100/image'  # 数据集所在目录
+        data_dir = 'G:\\EMA-ViTMatting\\data\\AIM500\\train\\original'  # 数据集所在目录
         image_files = os.listdir(data_dir)
         # 初始化总和
         total_sum = np.zeros(3)

@@ -100,7 +100,7 @@ class LoadModel:
 
         if training:
             pred = self.net(inputX)
-            loss_mse = (self.loss(pred.unsqueeze(1), imputY, inputX)) # b w h -> b c w h
+            _loss_ = (self.loss(pred.unsqueeze(1), imputY, inputX)) # b w h -> b c w h
 
             # 保存每个batch结果图
             if(epoch % 2 == 0 and i == 1):
@@ -125,13 +125,13 @@ class LoadModel:
                 cv2.imwrite('result/batch_result_train.png', final_image*255)
 
             self.optimG.zero_grad()
-            loss_mse.backward()
+            _loss_['loss_all'].backward()
             self.optimG.step()
-            return pred, loss_mse
+            return pred, _loss_
         else: 
             with torch.no_grad():
                 pred = self.net(inputX)
-                loss_mse = (self.loss(pred.unsqueeze(1), imputY, inputX))
+                _loss_ = (self.loss(pred.unsqueeze(1), imputY, inputX))
 
                 # 保存每个batch结果图
                 if(i == 1):
@@ -155,7 +155,7 @@ class LoadModel:
                             final_image = np.concatenate((final_image, concatenated_image), axis=1)
                     cv2.imwrite('result/batch_result_test.png', final_image*255)
 
-                return pred, loss_mse
+                return pred, _loss_
 
 
 if __name__ == "__main__":

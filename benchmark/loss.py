@@ -41,7 +41,7 @@ class MattingLoss(torch.nn.Module):
         # L_composition
         com_loss = self.composition_loss(predict, alpha, img)
         loss_all = (l1 + mse) + 2.0*l1_sobel + (0.5*Lap_loss + iou_loss + dice_loss) + com_loss
-        
+
         loss_dict = {
             'l1_loss': l1.item(),
             'mse_loss': mse.item(),
@@ -50,7 +50,7 @@ class MattingLoss(torch.nn.Module):
             'iou_loss': iou_loss.item(),
             'dice_loss': dice_loss.item(),
             'com_loss': com_loss.item(),
-            'loss_all': loss_all.item()
+            'loss_all': loss_all
         }
         return loss_dict
 

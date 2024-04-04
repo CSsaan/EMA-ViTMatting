@@ -151,7 +151,7 @@ class MobileViTBlock(nn.Module):
         self.conv1 = conv_nxn_bn(channel, channel, kernel_size)
         self.conv2 = conv_1x1_bn(channel, dim)
 
-        self.transformer = Transformer(dim, depth, 4, 8, mlp_dim, dropout)
+        self.transformer = Transformer(dim, depth, 8, 16, mlp_dim, dropout)
 
         self.conv3 = conv_1x1_bn(dim, channel)
         self.conv4 = conv_nxn_bn(2 * channel, channel, kernel_size)
@@ -183,13 +183,38 @@ class UpsampleBlock(nn.Module):
         self.silu = nn.SiLU()
         self.conv = nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=bias)
 
+        self.b1 = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels*2, 3, stride=2, padding=0, bias=bias),
+            nn.BatchNorm2d(out_channels*2),
+            nn.SiLU(),
+            nn.Conv2d(out_channels*2, out_channels*4, 3, stride=2, padding=0, bias=bias),
+            nn.BatchNorm2d(out_channels*4),
+            nn.SiLU(),
+            nn.Conv2d(out_channels*4, out_channels*8, 3, stride=2, padding=0, bias=bias),
+            nn.BatchNorm2d(out_channels*8),
+            nn.SiLU(),
+            nn.ConvTranspose2d(out_channels*8, out_channels*4, kernel_size=2, stride=2, padding=0),
+            nn.BatchNorm2d(out_channels*4),
+            nn.SiLU(),
+            nn.ConvTranspose2d(out_channels*4, out_channels*2, kernel_size=2, stride=2, padding=0),
+            nn.BatchNorm2d(out_channels*2),
+            nn.SiLU(),
+            nn.ConvTranspose2d(out_channels*2, out_channels*2, kernel_size=2, stride=2, padding=0),
+            nn.BatchNorm2d(out_channels*2),
+            nn.SiLU(),
+            nn.ConvTranspose2d(out_channels*2, out_channels, kernel_size=2, stride=2, padding=0),
+            nn.BatchNorm2d(out_channels),
+            nn.SiLU(),
+        )
+
     def forward(self, x):
-        x = self.conv_transpose(x)
-        x = self.batch_norm(x)
-        x = self.silu(x)
-        x = self.conv(x)
-        x = self.batch_norm(x)
-        x = self.silu(x)
+        # x = self.conv_transpose(x)
+        # x = self.batch_norm(x)
+        # x = self.silu(x)
+        # x = self.conv(x)
+        # x = self.batch_norm(x)
+        # x = self.silu(x)
+        x = self.b1(x)
         return x
 
 class UpsampleBlock2(nn.Module):
@@ -343,7 +368,7 @@ if __name__ == '__main__':
         dims = [144, 180, 216],
         channels = [16, 32, 48, 48, 64, 64, 80, 80, 96, 96],
         depths = (8, 16, 12),
-        use_cat=False
+        use_cat=True
     )
     img = torch.randn(8, 3, w, h)
     pred = mbvit_xs(img) # (1, 256, 256)

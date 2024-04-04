@@ -93,7 +93,7 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
             learning_rate = get_learning_rate(step_train)
             _, loss_dict = model.update(data, target, epoch, i, batch_size, learning_rate, training=True)
             train_loss += loss_dict['loss_all']
-            train_l1_loss += loss_dict['loss_l1']
+            train_l1_loss += loss_dict['l1_loss']
             train_mse_loss += loss_dict['mse_loss']
             train_l1_sobel_loss += loss_dict['l1_sobel_loss']
             train_laplacian_loss += loss_dict['laplacian_loss']
@@ -105,19 +105,19 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
             time_stamp = time.time()
             if step_train % 50 == 1 and local_rank == 0:
                 writer.add_scalar('learning_rate', learning_rate, step_train)
-                writer.add_scalar('train_loss_all', train_loss/(i+1), step_train)
-                writer.add_scalar('train_l1_loss', train_l1_loss/(i+1), step_train)
-                writer.add_scalar('train_mse_loss', train_mse_loss/(i+1), step_train)
-                writer.add_scalar('train_l1_sobel_loss', train_l1_sobel_loss/(i+1), step_train)
-                writer.add_scalar('train_laplacian_loss', train_laplacian_loss/(i+1), step_train)
-                writer.add_scalar('train_iou_loss', train_iou_loss/(i+1), step_train)
-                writer.add_scalar('train_dice_loss', train_dice_loss/(i+1), step_train)
-                writer.add_scalar('train_com_loss', train_com_loss/(i+1), step_train)
+                writer.add_scalar('train/train_loss_all', train_loss.item()/(i+1), step_train)
+                writer.add_scalar('loss/train_l1_loss', train_l1_loss/(i+1), step_train)
+                writer.add_scalar('loss/train_mse_loss', train_mse_loss/(i+1), step_train)
+                writer.add_scalar('loss/train_l1_sobel_loss', train_l1_sobel_loss/(i+1), step_train)
+                writer.add_scalar('loss/train_laplacian_loss', train_laplacian_loss/(i+1), step_train)
+                writer.add_scalar('loss/train_iou_loss', train_iou_loss/(i+1), step_train)
+                writer.add_scalar('loss/train_dice_loss', train_dice_loss/(i+1), step_train)
+                writer.add_scalar('loss/train_com_loss', train_com_loss/(i+1), step_train)
             postfix = {
                 '[epoch]': epoch,
                 'progress': '{}/{}'.format(i, args.step_per_epoch),
                 'time': 'train:{:.2f}+continental:{:.2f}'.format(train_time_interval, data_time_interval),
-                'loss_all': '{:.4f}'.format(train_loss/(i+1)),
+                'loss_all': '{:.4f}'.format(train_loss.item()/(i+1)),
             }
             pbar_batch.set_postfix(postfix)  
             # if local_rank == 0:
@@ -125,13 +125,13 @@ def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_pa
             step_train += 1
         
         i = 1
-        if epoch % 10 == 0:
+        if epoch % 3 == 0:
             evaluate(model, val_data, epoch, i, local_rank, batch_size)
             i = 0
 
-        if(train_loss/step_train < min_loss):
+        if(train_loss.item()/step_train < min_loss):
             model.save_model(epoch, local_rank)
-            min_loss = train_loss
+            min_loss = train_loss.item()
         
         # 分布式训练进程同步
         if(args.use_distribute):
@@ -149,7 +149,7 @@ def evaluate(model, val_data, epoch, i, local_rank, batch_size):
         target = target.to(device, non_blocking=True)
         with torch.no_grad():
             pred, loss_dict = model.update(data, target, epoch, i, batch_size, training=False)
-            loss = loss_dict['loss_all']
+            loss = loss_dict['loss_all'].item()
         # for j in range(gt.shape[0]):
         #     loss.append(-10 * math.log10(((gt[j] - pred[j]) * (gt[j] - pred[j])).mean().cpu().item()))
    
@@ -157,7 +157,7 @@ def evaluate(model, val_data, epoch, i, local_rank, batch_size):
     if local_rank == 0:
         print("*"*10, "test_loss", "*"*10)
         print(str(epoch), loss)
-        writer_val.add_scalar('test_loss', loss, epoch)
+        writer_val.add_scalar('train/test_loss_all', loss, epoch)
         print("*"*30)
         
 if __name__ == "__main__":    
@@ -165,10 +165,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--use_model_name', default='MobileViT', type=str, help='name of model to use') # 'GoogLeNet'、 'ViT'、 'MobileViT'
     parser.add_argument('--reload_model', default=False, type=bool, help='reload model')
-    parser.add_argument('--reload_model_name', default='MobileViT_20', type=str, help='name of reload model')
+    parser.add_argument('--reload_model_name', default='MobileViT_86', type=str, help='name of reload model')
     parser.add_argument('--local_rank', default=0, type=int, help='local rank')
     parser.add_argument('--world_size', default=8, type=int, help='world size')
-    parser.add_argument('--batch_size', default=24, type=int, help='batch size')
+    parser.add_argument('--batch_size', default=16, type=int, help='batch size')
     parser.add_argument('--data_path', default="/data/AIM500", type=str, help='data path of AIM_500 dataset')
     parser.add_argument('--use_distribute', default=False, type=bool, help='train on distribute Devices by torch.distributed')
     args = parser.parse_args()
