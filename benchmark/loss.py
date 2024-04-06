@@ -1,7 +1,15 @@
 import torch
 import torch.nn.functional as F
 import kornia
-from .eval import LapLoss, IoULoss, DiceLoss
+import cv2
+
+import numpy as np
+import os
+import sys
+# 获取当前文件所在目录的上2级目录
+config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
+sys.path.append(config_path)
+from eval import LapLoss, IoULoss, DiceLoss
 
 
 class MattingLoss(torch.nn.Module):
@@ -28,6 +36,14 @@ class MattingLoss(torch.nn.Module):
         eps = 1e-6
         L_composition = torch.sqrt(torch.pow(fg - fg_pre, 2.) + eps).mean()
         return L_composition
+    
+    def laplacian_edge_detection(self, img_tensor, kernel_size=3):
+        laplacian = kornia.filters.laplacian(img_tensor, kernel_size=kernel_size)/255.0*2.0
+        # edge = laplacian.squeeze().numpy()
+        # cv2.imshow('edge', edge)
+        # cv2.waitKey(0)
+        return laplacian
+
 
     def forward(self, predict, alpha, img):
         # _mse = self.mse_loss(predict, alpha)
@@ -36,11 +52,11 @@ class MattingLoss(torch.nn.Module):
         iou_loss = self.IoU(predict, alpha)
         dice_loss = self.Dice(predict, alpha)
         l1 = F.l1_loss(predict, alpha)
-        l1_sobel = F.l1_loss(kornia.filters.laplacian(predict, 3), kornia.filters.laplacian(alpha, 3))
+        l1_sobel = F.l1_loss(self.laplacian_edge_detection(predict, 3), self.laplacian_edge_detection(alpha, 3))
         mse = F.mse_loss(predict, alpha)
         # L_composition
         com_loss = self.composition_loss(predict, alpha, img)
-        loss_all = (l1 + mse) + 2.0*l1_sobel + (0.5*Lap_loss + iou_loss + dice_loss) + com_loss
+        loss_all =(l1 + mse)*10.0 + (iou_loss + dice_loss)*100.0 + Lap_loss # (l1 + mse)*10.0 + 200.0*l1_sobel + (Lap_loss + iou_loss + dice_loss) + com_loss
 
         loss_dict = {
             'l1_loss': l1.item(),
@@ -56,18 +72,20 @@ class MattingLoss(torch.nn.Module):
 
 if __name__ == '__main__':
     # 假设有两张图像 predict 和 alpha，均为 torch.Tensor 类型
-    img = torch.randn(1, 3, 320, 320)
+    img = torch.randn(1, 3, 2048, 1365)
 
-    predict = torch.randn(1, 1, 320, 320)
-    alpha = predict
-    # alpha = torch.randn(1, 1, 320, 320)
+    predict = torch.zeros(1, 1, 2048, 1365)
+    # predict = cv2.imread(r'G:\EMA-ViTMatting\data\AIM500\train\mask\506937171_b73ff1c24b_o.jpg', cv2.IMREAD_GRAYSCALE)
+    # predict = kornia.image_to_tensor(predict).float().unsqueeze(0)
+    # alpha = predict
+    # alpha = torch.randn(1, 1, 2048, 1365)
 
-    # predict = torch.zeros(1, 1, 320, 320)
-    # alpha = torch.ones(1, 1, 320, 320)
+    # predict = torch.zeros(1, 1, 2048, 1365)
+    alpha = torch.ones(1, 1, 2048, 1365)
     
     # 实例化 MattingLoss 类
     matting_loss = MattingLoss().to(predict.device)
 
     # 计算损失大小
     loss = matting_loss(predict, alpha, img)
-    print("{:.6f}".format(loss.item()))
+    print("{:.6f}".format(loss['loss_all'].item()))

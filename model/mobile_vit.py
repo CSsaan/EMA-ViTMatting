@@ -42,7 +42,7 @@ class FeedForward(nn.Module):
         return self.net(x)
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads=8, dim_head=64, dropout=0.2):
+    def __init__(self, dim, heads=16, dim_head=128, dropout=0.2):
         super().__init__()
         inner_dim = dim_head * heads
         self.heads = heads
@@ -136,12 +136,22 @@ class MV2Block(nn.Module):
                 nn.BatchNorm2d(oup),
             )
 
+        self._init_weight()
+
     def forward(self, x):
         out = self.conv(x)
         if self.use_res_connect:
             out = out + x
         # print(f"out.size:{out.size()}")
         return out
+    
+    def _init_weight(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
 
 class MobileViTBlock(nn.Module):
     def __init__(self, dim, depth, channel, kernel_size, patch_size, mlp_dim, dropout=0.2):
@@ -184,52 +194,130 @@ class UpsampleBlock(nn.Module):
         self.conv = nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=bias)
 
         self.b1 = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels*2, 3, stride=2, padding=0, bias=bias),
+            nn.Conv2d(in_channels, out_channels*2, 3, stride=2, padding=1, bias=bias),
             nn.BatchNorm2d(out_channels*2),
-            nn.SiLU(),
-            nn.Conv2d(out_channels*2, out_channels*4, 3, stride=2, padding=0, bias=bias),
-            nn.BatchNorm2d(out_channels*4),
-            nn.SiLU(),
-            nn.Conv2d(out_channels*4, out_channels*8, 3, stride=2, padding=0, bias=bias),
-            nn.BatchNorm2d(out_channels*8),
-            nn.SiLU(),
-            nn.ConvTranspose2d(out_channels*8, out_channels*4, kernel_size=2, stride=2, padding=0),
-            nn.BatchNorm2d(out_channels*4),
-            nn.SiLU(),
-            nn.ConvTranspose2d(out_channels*4, out_channels*2, kernel_size=2, stride=2, padding=0),
-            nn.BatchNorm2d(out_channels*2),
-            nn.SiLU(),
+            nn.ReLU(inplace=True),
             nn.ConvTranspose2d(out_channels*2, out_channels*2, kernel_size=2, stride=2, padding=0),
             nn.BatchNorm2d(out_channels*2),
-            nn.SiLU(),
-            nn.ConvTranspose2d(out_channels*2, out_channels, kernel_size=2, stride=2, padding=0),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(out_channels*2, out_channels*2, kernel_size=2, stride=2, padding=0),
+            nn.BatchNorm2d(out_channels*2),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels*2, out_channels, 3, padding=1, bias=bias),
             nn.BatchNorm2d(out_channels),
-            nn.SiLU(),
+            nn.ReLU(inplace=True),
         )
+        self._init_weight()
 
     def forward(self, x):
-        # x = self.conv_transpose(x)
-        # x = self.batch_norm(x)
-        # x = self.silu(x)
-        # x = self.conv(x)
-        # x = self.batch_norm(x)
-        # x = self.silu(x)
         x = self.b1(x)
         return x
+    
+    def _init_weight(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
 
 class UpsampleBlock2(nn.Module):
     def __init__(self, in_channels, out_channels, bias=True):
         super(UpsampleBlock2, self).__init__()
-        self.up = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
-            nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=bias),
+
+        self.up1 = nn.Sequential(
+            nn.ConvTranspose2d(in_channels, out_channels//2, kernel_size=2, stride=2, padding=0),
+            nn.BatchNorm2d(out_channels//2),
+            nn.ReLU(inplace=True), # [8, 20, 32, 32] **
+            nn.Conv2d(out_channels//2, out_channels//2, kernel_size=1, stride=1, padding=0),
+            nn.BatchNorm2d(out_channels//2),
+            nn.ReLU(inplace=True)
+        )
+        self.up2 = nn.Sequential(
+            nn.ConvTranspose2d(out_channels//2, out_channels//4, kernel_size=2, stride=2, padding=0),
+            nn.BatchNorm2d(out_channels//4),
+            nn.ReLU(inplace=True), # [8, 10, 64, 64] **
+            nn.Conv2d(out_channels//4, out_channels//4, kernel_size=1, stride=1, padding=0),
+            nn.BatchNorm2d(out_channels//4),
+            nn.ReLU(inplace=True)
+        )
+        self.up3 = nn.Sequential(
+            nn.ConvTranspose2d(out_channels//4, out_channels//8, kernel_size=2, stride=2, padding=0),
+            nn.BatchNorm2d(out_channels//8),
+            nn.ReLU(inplace=True), # [8, 5, 128, 128]
+            nn.Conv2d(out_channels//8, out_channels//8, kernel_size=1, stride=1, padding=0),
+            nn.BatchNorm2d(out_channels//8),
+            nn.ReLU(inplace=True)
+        )
+        self.down1 = nn.Sequential(
+            nn.Conv2d(out_channels//8, out_channels//4, 3, stride=1, padding=1, bias=bias),
+            nn.BatchNorm2d(out_channels//4),
+            nn.ReLU(inplace=True), # [8, 10, 64, 64] **
+            nn.AvgPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(out_channels//4, out_channels//4, kernel_size=1, stride=1, padding=0),
+            nn.BatchNorm2d(out_channels//4),
+            nn.ReLU(inplace=True)
+        )
+        self.down2 = nn.Sequential(
+            nn.Conv2d(out_channels//4, out_channels//2, 3, stride=1, padding=1, bias=bias),
+            nn.BatchNorm2d(out_channels//2),
+            nn.ReLU(inplace=True), # [8, 20, 32, 32] **
+            nn.AvgPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(out_channels//2, out_channels//2, kernel_size=1, stride=1, padding=0),
+            nn.BatchNorm2d(out_channels//2),
+            nn.ReLU(inplace=True)
+        )
+        self.down3 = nn.Sequential(
+            nn.Conv2d(out_channels//2, out_channels, 3, padding=1, bias=bias),
             nn.BatchNorm2d(out_channels),
-            nn.SiLU(),
+            nn.ReLU(inplace=True), # [8, 40, 32, 32]
+            nn.Conv2d(out_channels, out_channels, kernel_size=1, stride=1, padding=0),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
         )
 
+        self.up = nn.Sequential(
+            nn.ConvTranspose2d(in_channels, out_channels//2, kernel_size=2, stride=2, padding=0),
+            nn.BatchNorm2d(out_channels//2),
+            nn.ReLU(inplace=True), # [8, 20, 32, 32] **
+            nn.ConvTranspose2d(out_channels//2, out_channels//4, kernel_size=2, stride=2, padding=0),
+            nn.BatchNorm2d(out_channels//4),
+            nn.ReLU(inplace=True), # [8, 10, 64, 64] **
+            nn.ConvTranspose2d(out_channels//4, out_channels//8, kernel_size=2, stride=2, padding=0),
+            nn.BatchNorm2d(out_channels//8),
+            nn.ReLU(inplace=True), # [8, 5, 128, 128]
+            
+            nn.Conv2d(out_channels//8, out_channels//4, 3, stride=2, padding=1, bias=bias),
+            nn.BatchNorm2d(out_channels//4),
+            nn.ReLU(inplace=True), # [8, 10, 64, 64] **
+            nn.Conv2d(out_channels//4, out_channels//2, 3, stride=2, padding=1, bias=bias),
+            nn.BatchNorm2d(out_channels//2),
+            nn.ReLU(inplace=True), # [8, 20, 32, 32] **
+            nn.Conv2d(out_channels//2, out_channels, 3, padding=1, bias=bias),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True), # [8, 40, 32, 32]
+        )
+        self._init_weight()
+
     def forward(self, x):
-        x = self.up(x)
+        # print("1:", x.size())
+        # x = self.up(x)
+        # print("2:", x.size())
+        x1 = self.up1(x)
+        x2 = self.up2(x1)
+        x3 = self.up3(x2)
+        x4 = self.down1(x3) + x2
+        x5 = self.down2(x4) + x1
+        x = self.down3(x5)
         return x
+    
+    def _init_weight(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
 
 class MobileViT(nn.Module):
     """MobileViT.
@@ -313,16 +401,24 @@ class MobileViT(nn.Module):
             self.up5 = UpsampleBlock(channels[1], channels[0])
         else: # cat()
             self.up1 = UpsampleBlock2(channels[9], channels[7]//2, bias=False)
-            self.up2 = UpsampleBlock2(channels[7], channels[5]//2, bias=False)
+            self.up2 = UpsampleBlock2(channels[7], channels[5], bias=False)
             self.up3 = UpsampleBlock2(channels[5], channels[3]//2, bias=False)
-            self.up4 = UpsampleBlock2(channels[3], channels[1]//2, bias=False)
+            self.up4 = UpsampleBlock2(channels[3], channels[1], bias=False)
             self.up5 = UpsampleBlock2(channels[1], channels[0])
+
+        self.same_size = nn.Sequential(
+            nn.Conv2d(3, 1, kernel_size=1, stride=1, padding=0),
+            nn.BatchNorm2d(1),
+            nn.ReLU(inplace=True)
+        )
 
         self.to_logits = nn.Sequential(
             Reduce('b c h w -> b h w', 'mean'),
         )
 
     def forward(self, x):
+        # 1*1卷积将[1, 3, 256, 256]计算为[1, 1, 256, 256]
+        self.re256 = self.same_size(x)
         x = self.conv1(x) # [1, 3, 256, 256] -> [1, 16, 128, 128]
         for idx, conv in enumerate(self.stem):
             x = conv(x) # [1, 32, 128, 128] [1, 48, 64, 64] [1, 48, 64, 64] [1, 48, 64, 64]
@@ -344,14 +440,14 @@ class MobileViT(nn.Module):
             x = self.up2(x) + self.re32
             x = self.up3(x) + self.re64
             x = self.up4(x) + self.re128
-            x = self.up5(x)
+            x = self.up5(x) + self.re256
         else:
             # 反向编码上采样, 改add为cat
             x = torch.cat((self.up1(x), self.re16), dim=1) # [8, 96, 8, 8]  ->  [1, 80, 16, 16] [1, 64, 32, 32] [1, 48, 64, 64] [1, 32, 128, 128] [1, 256, 256]
-            x = torch.cat((self.up2(x), self.re32), dim=1)
+            x = self.up2(x) # torch.cat((self.up2(x), self.re32), dim=1)
             x = torch.cat((self.up3(x), self.re64), dim=1)
-            x = torch.cat((self.up4(x), self.re128), dim=1)
-            x = self.up5(x)
+            x = self.up4(x)# torch.cat((self.up4(x), self.re128), dim=1)
+            x = self.up5(x) + self.re256
 
         return self.to_logits(x)
 
@@ -361,16 +457,16 @@ def summary_model(model, input_x):
 
 if __name__ == '__main__':
 
-    (w, h) = (256, 256)
+    (w, h) = (512, 512)
 
     mbvit_xs = MobileViT(
         image_size = (w, h),
         dims = [144, 180, 216],
         channels = [16, 32, 48, 48, 64, 64, 80, 80, 96, 96],
-        depths = (8, 16, 12),
-        use_cat=True
-    )
-    img = torch.randn(8, 3, w, h)
+        depths = (2, 4, 3),
+        use_cat=False
+    ).to('cuda')
+    img = torch.randn(8, 3, w, h).to('cuda')
     pred = mbvit_xs(img) # (1, 256, 256)
     print(f"pred:{pred.size()}")
 

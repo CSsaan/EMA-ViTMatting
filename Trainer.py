@@ -103,7 +103,7 @@ class LoadModel:
             _loss_ = (self.loss(pred.unsqueeze(1), imputY, inputX)) # b w h -> b c w h
 
             # 保存每个batch结果图
-            if(epoch % 2 == 0 and i == 1):
+            if(epoch % 1 == 0 and i == 1):
                 final_image = None
                 for i in range(batch_size):
                     first_batch_rgb = inputX[i].permute(1, 2, 0).cpu().detach().numpy()

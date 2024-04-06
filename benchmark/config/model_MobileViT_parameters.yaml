@@ -1,5 +1,5 @@
-image_size: [256, 256]
+image_size: [512, 512]
 dims: [144, 180, 216]
 channels: [16, 32, 48, 48, 64, 64, 80, 80, 96, 96]
 depths: [8, 16, 12]
-use_cat: True
+use_cat: False

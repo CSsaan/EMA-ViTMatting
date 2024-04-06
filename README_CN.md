@@ -98,6 +98,9 @@ python inferenceCS.py --image_path data/AIM500/test/original/o_dc288b1a.jpg --mo
 │   ├── testGPU.py
 │   ├── yuv_frame_io.py
 │   └── print_structure.py
+├── onnx_demo
+│   ├── export_onnx.py
+│   └── infer_onnx.py
 ├── data                     -> 数据集
 ├── dataset                  -> 数据加载器
 ├── log                      -> tensorboard 日志
