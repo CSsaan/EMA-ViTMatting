@@ -82,9 +82,9 @@ if __name__ == '__main__':
     img = torch.randn(1, 3, 2048, 1365)
     img = F.interpolate(img, size=(64, 64), mode='bilinear', align_corners=False)
 
-    predict = torch.zeros(1, 1, 2048, 1365)
-    # predict = cv2.imread('/workspaces/EMA-ViTMatting/data/AIM500/train/mask/o_c2cf00c3.png', cv2.IMREAD_GRAYSCALE)
-    # predict = kornia.image_to_tensor(predict).float().unsqueeze(0)
+    # predict = torch.zeros(1, 1, 2048, 1365)
+    predict = cv2.imread('/workspaces/EMA-ViTMatting/data/AIM500/train/mask/o_c2cf00c3.png', cv2.IMREAD_GRAYSCALE)
+    predict = kornia.image_to_tensor(predict).float().unsqueeze(0)
     predict = F.interpolate(predict, size=(64, 64), mode='bilinear', align_corners=False)
     predict = torch.clamp(predict, min=0.0, max=1.0)
     # print(predict.size())
