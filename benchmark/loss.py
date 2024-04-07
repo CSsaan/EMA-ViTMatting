@@ -43,7 +43,13 @@ class MattingLoss(torch.nn.Module):
         # cv2.imshow('edge', edge)
         # cv2.waitKey(0)
         return laplacian
-
+    
+    def mask_loss(self, predict, alpha):
+        non_zero_indices = alpha.nonzero()
+        non_zero_predict = predict[non_zero_indices[:, 0], non_zero_indices[:, 1], non_zero_indices[:, 2], non_zero_indices[:, 3]]
+        non_zero_alpha = alpha[non_zero_indices[:, 0], non_zero_indices[:, 1], non_zero_indices[:, 2], non_zero_indices[:, 3]]
+        l1_loss = torch.mean(torch.abs(non_zero_predict - non_zero_alpha))
+        return l1_loss
 
     def forward(self, predict, alpha, img):
         # _mse = self.mse_loss(predict, alpha)
@@ -56,7 +62,8 @@ class MattingLoss(torch.nn.Module):
         mse = F.mse_loss(predict, alpha)
         # L_composition
         com_loss = self.composition_loss(predict, alpha, img)
-        loss_all =(l1 + mse)*10.0 + (iou_loss + dice_loss)*100.0 + Lap_loss # (l1 + mse)*10.0 + 200.0*l1_sobel + (Lap_loss + iou_loss + dice_loss) + com_loss
+        mask_L1_loss = self.mask_loss(predict, alpha)
+        loss_all = (l1 + mse)*0.5 + (iou_loss + dice_loss) + Lap_loss + mask_L1_loss # (l1 + mse)*10.0 + (iou_loss + dice_loss)*100.0 + Lap_loss + mask_L1_loss # (l1 + mse)*10.0 + 200.0*l1_sobel + (Lap_loss + iou_loss + dice_loss) + com_loss
 
         loss_dict = {
             'l1_loss': l1.item(),
@@ -73,16 +80,23 @@ class MattingLoss(torch.nn.Module):
 if __name__ == '__main__':
     # 假设有两张图像 predict 和 alpha，均为 torch.Tensor 类型
     img = torch.randn(1, 3, 2048, 1365)
+    img = F.interpolate(img, size=(64, 64), mode='bilinear', align_corners=False)
 
     predict = torch.zeros(1, 1, 2048, 1365)
-    # predict = cv2.imread(r'G:\EMA-ViTMatting\data\AIM500\train\mask\506937171_b73ff1c24b_o.jpg', cv2.IMREAD_GRAYSCALE)
+    # predict = cv2.imread('/workspaces/EMA-ViTMatting/data/AIM500/train/mask/o_c2cf00c3.png', cv2.IMREAD_GRAYSCALE)
     # predict = kornia.image_to_tensor(predict).float().unsqueeze(0)
-    # alpha = predict
-    # alpha = torch.randn(1, 1, 2048, 1365)
+    predict = F.interpolate(predict, size=(64, 64), mode='bilinear', align_corners=False)
+    predict = torch.clamp(predict, min=0.0, max=1.0)
+    # print(predict.size())
+    alpha = predict
 
-    # predict = torch.zeros(1, 1, 2048, 1365)
-    alpha = torch.ones(1, 1, 2048, 1365)
-    
+    # alpha = torch.ones(1, 1, 2048, 1365)
+    alpha = cv2.imread('/workspaces/EMA-ViTMatting/result/o_c2cf00c3.png', cv2.IMREAD_GRAYSCALE)
+    alpha = kornia.image_to_tensor(alpha).float().unsqueeze(0)
+    alpha = F.interpolate(alpha, size=(64, 64), mode='bilinear', align_corners=False)
+    alpha = torch.clamp(alpha, min=0.0, max=1.0)
+    # print(alpha.size())
+
     # 实例化 MattingLoss 类
     matting_loss = MattingLoss().to(predict.device)
 
