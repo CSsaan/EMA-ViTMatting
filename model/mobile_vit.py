@@ -457,7 +457,8 @@ def summary_model(model, input_x):
 
 if __name__ == '__main__':
 
-    (w, h) = (512, 512)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    (w, h) = (256, 256)
 
     mbvit_xs = MobileViT(
         image_size = (w, h),
@@ -465,8 +466,8 @@ if __name__ == '__main__':
         channels = [16, 32, 48, 48, 64, 64, 80, 80, 96, 96],
         depths = (2, 4, 3),
         use_cat=False
-    ).to('cuda')
-    img = torch.randn(8, 3, w, h).to('cuda')
+    ).to(device)
+    img = torch.randn(8, 3, w, h).to(device)
     pred = mbvit_xs(img) # (1, 256, 256)
     print(f"pred:{pred.size()}")
 

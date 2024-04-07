@@ -11,10 +11,8 @@ config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(config_path)
 from config import *
 
-(w, h) = load_model_parameters('benchmark/config/model_MobileViT_parameters.yaml')['image_size']
-
 class AIM500Dataset(Dataset):
-    def __init__(self, dataset_name, root_dir):
+    def __init__(self, use_model_name, dataset_name, root_dir):
         self.root_dir = root_dir
         if dataset_name == 'train':
             self.image_folder = os.path.join(root_dir, 'train', 'original')
@@ -27,6 +25,8 @@ class AIM500Dataset(Dataset):
         
         self.image_filenames = os.listdir(self.image_folder)
         self.label_filenames = os.listdir(self.label_folder)
+
+        (w, h) = load_model_parameters(f'benchmark/config/model_{use_model_name}_parameters.yaml')['image_size']
         
         # Transformations for images and labels
         self.transform_image = transforms.Compose([

@@ -45,20 +45,20 @@ def get_learning_rate(step):
         mul = np.cos((step - 2000) / (300 * args.step_per_epoch - 2000) * 10 * np.pi) * 0.5 + 0.5
     return (1e-4 - 1e-5) * mul + 1e-5
 
-def train(model, reloadModel_epochs, local_rank, batch_size, world_size, data_path):
+def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, world_size, data_path):
     if local_rank == 0:
         writer = SummaryWriter('log/train_EMAVFI')
     step_train, step_eval, best = 0, 0, 0
 
     # --------- AIM-500 数据集加载 -----------------
-    dataset = AIM500Dataset('train', root_dir=os.getcwd()+data_path)
+    dataset = AIM500Dataset(use_model_name, 'train', root_dir=os.getcwd()+data_path)
     if(args.use_distribute):
         print('DataLoader use distribute.')
         sampler = DistributedSampler(dataset)
         train_data = DataLoader(dataset, batch_size=batch_size, num_workers=world_size, pin_memory=True, drop_last=True, shuffle=True, sampler=sampler)
     else:
         train_data = DataLoader(dataset, batch_size=batch_size, num_workers=world_size, pin_memory=True, drop_last=True, shuffle=True)
-    dataset_val = AIM500Dataset('test', root_dir=os.getcwd()+data_path)
+    dataset_val = AIM500Dataset(use_model_name, 'test', root_dir=os.getcwd()+data_path)
     val_data = DataLoader(dataset_val, batch_size=batch_size, num_workers=world_size, pin_memory=True, drop_last=True, shuffle=True)
     # -----------------------------------------------------
     print("train_data.__len__(), val_data.__len__():", dataset.__len__(), dataset_val.__len__())
@@ -163,11 +163,11 @@ def evaluate(model, val_data, epoch, i, local_rank, batch_size):
 if __name__ == "__main__":    
     print_cuda()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--use_model_name', default='MobileViT', type=str, help='name of model to use') # 'GoogLeNet'、 'ViT'、 'MobileViT'
-    parser.add_argument('--reload_model', default=True, type=bool, help='reload model')
+    parser.add_argument('--use_model_name', default='VisionTransformer', type=str, help='name of model to use') # 'GoogLeNet'、 'ViT'、 'MobileViT'
+    parser.add_argument('--reload_model', default=False, type=bool, help='reload model')
     parser.add_argument('--reload_model_name', default='MobileViT_50', type=str, help='name of reload model')
     parser.add_argument('--local_rank', default=0, type=int, help='local rank')
-    parser.add_argument('--world_size', default=8, type=int, help='world size')
+    parser.add_argument('--world_size', default=4, type=int, help='world size')
     parser.add_argument('--batch_size', default=1, type=int, help='batch size')
     parser.add_argument('--data_path', default="/data/AIM500", type=str, help='data path of AIM_500 dataset')
     parser.add_argument('--use_distribute', default=False, type=bool, help='train on distribute Devices by torch.distributed')
@@ -201,5 +201,5 @@ if __name__ == "__main__":
         epochs = model.reload_model(args.reload_model_name) # 继续训练加载的模型名字
     
     # 开始训练
-    train(model, [args.reload_model, epochs], args.local_rank, args.batch_size, args.world_size, args.data_path)
+    train(model, args.use_model_name, [args.reload_model, epochs], args.local_rank, args.batch_size, args.world_size, args.data_path)
         
