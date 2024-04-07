@@ -33,11 +33,11 @@ class AIM500Dataset(Dataset):
             transforms.ToTensor(),
             # transforms.Normalize((0.49372172, 0.46933405, 0.44654398), (0.30379174, 0.29378528, 0.30067085)),
             transforms.Resize((w, h)),  # 如果你需要调整图像大小
-            # transforms.RandomHorizontalFlip(),  # 如果你需要随机水平翻转
-            # transforms.RandomVerticalFlip(),  # 如果你需要随机垂直翻转
-            # transforms.RandomRotation(10),  # 如果你需要随机旋转
+            transforms.RandomHorizontalFlip(),  # 如果你需要随机水平翻转
+            transforms.RandomVerticalFlip(),  # 如果你需要随机垂直翻转
+            transforms.RandomRotation(10),  # 如果你需要随机旋转
             # transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),  # 如果你需要随机仿射变换
-            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # 如果你需要颜色抖动
+            # transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # 如果你需要颜色抖动
             # transforms.RandomGrayscale(p=0.2),  # 如果你需要随机灰度
             # transforms.RandomPerspective(distortion_scale=0.5, p=0.5),  # 如果你需要随机透视变换
             # transforms.RandomCrop(224, padding=4),  # 如果你需要随机裁剪
@@ -45,11 +45,11 @@ class AIM500Dataset(Dataset):
             # transforms.RandomErasing(p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0),  # 如果你需要随机擦除
         ])
         
-        self.transform_label = transforms.Compose([
-            transforms.ToTensor(),
-            # transforms.Normalize((0.5,), (0.5,)),
-            transforms.Resize((w, h)),
-        ])
+        # self.transform_label = transforms.Compose([
+        #     transforms.ToTensor(),
+        #     # transforms.Normalize((0.5,), (0.5,)),
+        #     transforms.Resize((w, h)),
+        # ])
 
     def __len__(self):
         return len(self.image_filenames)
@@ -61,7 +61,7 @@ class AIM500Dataset(Dataset):
         label = Image.open(label_name).convert('L')
         
         image = self.transform_image(image)
-        label = self.transform_label(label)
+        label = self.transform_image(label)
         
         return image, label
 
