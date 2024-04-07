@@ -18,6 +18,8 @@ class LoadModel:
             self.net = MODEL_CONFIG[model_name]
         elif(model_name =='MobileViT'):
             self.net = MODEL_CONFIG[model_name]
+        elif(model_name =='VisionTransformer'):
+            self.net = MODEL_CONFIG[model_name]
 
         self.name = model_name
         print(f'loaded model: {self.name}')

@@ -1,0 +1,5 @@
+vit_name: "R50-ViT-B_16"
+image_size: [224, 224]
+vit_patches_size: 16
+n_classes: 1
+n_skip: 3

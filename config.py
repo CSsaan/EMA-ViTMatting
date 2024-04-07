@@ -4,9 +4,12 @@ import yaml
 
 from model.Inception_model import Inception
 from model.GoogLeNet_model import GoogLeNet
-from model.mobile_vit import MobileViT
 
 from model.vit import ViT
+from model.mobile_vit import MobileViT
+from model.vit_seg_modeling import VisionTransformer
+from model.vit_seg_modeling import CONFIGS
+
 
 def load_model_parameters(file_path):
     with open(file_path, 'r') as file:
@@ -24,9 +27,24 @@ def load_all_model_config_before_access():
     global ALL_parameters
     ALL_parameters['ViT_parameters'] = load_model_parameters('benchmark/config/model_ViT_parameters.yaml')
     ALL_parameters['MobileViT_parameters'] = load_model_parameters('benchmark/config/model_MobileViT_parameters.yaml')
+    ALL_parameters['VisionTransformer_parameters'] = load_model_parameters('benchmark/config/model_VisionTransformer_parameters.yaml')
+
+def load_VisionTransformer_config():
+    vit_name = ALL_parameters['VisionTransformer_parameters']['vit_name']
+    img_size = ALL_parameters['VisionTransformer_parameters']['image_size'][0]
+    vit_patches_size = ALL_parameters['VisionTransformer_parameters']['vit_patches_size']
+    n_classes = ALL_parameters['VisionTransformer_parameters']['n_classes']
+    n_skip = ALL_parameters['VisionTransformer_parameters']['n_skip']
+    config_vit = CONFIGS[vit_name]
+    config_vit.n_classes =n_classes
+    config_vit.n_skip = n_skip
+    if vit_name.find('R50') != -1:
+        config_vit.patches.grid = (int(img_size / vit_patches_size), int(img_size / vit_patches_size))
+    return config_vit, img_size
 
 """========== ALL Model =========="""
 load_all_model_config_before_access()
+config_vit, img_size = load_VisionTransformer_config()
 MODEL_CONFIG = {
     "LOGNAME": "CS_ALL_MODEL",
     "GoogLeNet": (Inception, GoogLeNet),
@@ -49,4 +67,9 @@ MODEL_CONFIG = {
             depths = ALL_parameters['MobileViT_parameters']['depths'],
             use_cat = ALL_parameters['MobileViT_parameters']['use_cat']
             ),
+    "VisionTransformer": VisionTransformer(
+            config_vit, 
+            img_size=img_size, 
+            num_classes=config_vit.n_classes
+    )
 }

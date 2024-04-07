@@ -16,6 +16,7 @@ import numpy as np
 from torch.nn import CrossEntropyLoss, Dropout, Softmax, Linear, Conv2d, LayerNorm
 from torch.nn.modules.utils import _pair
 from scipy import ndimage
+from einops.layers.torch import Reduce
 
 # 模型可视化
 from torchsummary import summary
@@ -394,12 +395,19 @@ class VisionTransformer(nn.Module):
         )
         self.config = config
 
+        self.to_logits = nn.Sequential(
+            Reduce('b c h w -> b h w', 'mean'),
+        )
+
     def forward(self, x):
         if x.size()[1] == 1:
             x = x.repeat(1,3,1,1)
         x, attn_weights, features = self.transformer(x)  # (B, n_patch, hidden)
         x = self.decoder(x, features)
-        logits = self.segmentation_head(x)
+        x = self.segmentation_head(x)
+
+        logits = self.to_logits(x)
+        
         return logits
 
     def load_from(self, weights):
@@ -487,9 +495,9 @@ if __name__ == "__main__":
     # input_x = (1, img_size, img_size)
     # summary_model(net, input_x)
 
-     # (2). 可视化模型网络结构
-    input_x = torch.randn(1, 3, img_size, img_size)  # 随机生成一个输入
-    modelData = "./demo.pth"  # 定义模型数据保存的路径
-    # modelData = "./demo.onnx"  # 有人说应该是 onnx 文件，但我尝试 pth 是可以的 
-    torch.onnx.export(net, input_x, modelData)  # 将 pytorch 模型以 onnx 格式导出并保存
-    netron.start(modelData)  # 输出网络结构
+    #  # (2). 可视化模型网络结构
+    # input_x = torch.randn(1, 3, img_size, img_size)  # 随机生成一个输入
+    # modelData = "./demo.pth"  # 定义模型数据保存的路径
+    # # modelData = "./demo.onnx"  # 有人说应该是 onnx 文件，但我尝试 pth 是可以的 
+    # torch.onnx.export(net, input_x, modelData)  # 将 pytorch 模型以 onnx 格式导出并保存
+    # netron.start(modelData)  # 输出网络结构
