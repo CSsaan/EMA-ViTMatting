@@ -15,7 +15,7 @@ from config import *
 
 def normalize_image(image, mean, std):
     image = image / 255.0  # 将图像像素值归一化到[0, 1]
-    image = (image - mean) / std  # 根据均值和标准差进行归一化
+    # image = (image - mean) / std  # 根据均值和标准差进行归一化
     return image.astype(np.float32)
 
 def preprocess_image(image):
@@ -63,8 +63,8 @@ def main(args):
 if __name__ == '__main__':
     # python inferenceCS.py --image_path data/AIM500/test/original/o_dc288b1a.jpg --model_name MobileViT_194_pure
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_path', type=str, default="data/AIM500/test/mask/o_dc288b1a.png", help='Path to the input image')
-    parser.add_argument('--model_name', type=str, default="MobileViT_194_pure", help='Name of the model to use for inference')
+    parser.add_argument('--image_path', type=str, default="result/face5.png", help='Path to the input image')
+    parser.add_argument('--model_name', type=str, default="MobileViT_53_pure", help='Name of the model to use for inference')
     parser.add_argument('--output_dir', type=str, default='./result', help="Path to the output directory")
     args = parser.parse_args()
 

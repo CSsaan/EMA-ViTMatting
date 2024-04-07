@@ -1,10 +1,11 @@
 import torch
+import onnx
 import torch.onnx
 
 import sys
 import os
-# 获取当前文件所在目录的上2级目录
-config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+CURRENT_DIR = os.path.split(os.path.abspath(__file__))[0]  # 当前目录
+config_path = CURRENT_DIR.rsplit('/', 1)[0]  # 上1级目录
 sys.path.append(config_path)
 from config import *
 		
@@ -31,13 +32,15 @@ class PyTorchToONNXConverter:
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = MODEL_CONFIG['MobileViT'].to(device)
-    checkpoint = torch.load(f'ckpt/MobileViT_193_pure.pkl', map_location=device)
+    model = MODEL_CONFIG['MobileViT'].eval().to(device)
+    checkpoint = torch.load(f'ckpt/MobileViT_53_pure.pkl', map_location=device)
     model.load_state_dict(checkpoint, False)
     converter = PyTorchToONNXConverter(model)
-    input_shape = (8, 3, 256, 256)  # 示例输入大小:(None, 3, 256, 256) --> 模型输出大小:(None, 1, 256, 256)
+    input_shape = (1, 3, 512, 512)  # 示例输入大小:(None, 3, 256, 256) --> 模型输出大小:(None, 1, 256, 256)
     converter.convert_to_onnx(input_shape, 'onnx_demo/MobileViT.onnx', device)
     print("ONNX 模型导出完成！")
+
+    # TODO: INT8量化
 
     # 检查导出的模型
     import onnx
