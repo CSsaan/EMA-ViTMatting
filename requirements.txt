@@ -16,3 +16,5 @@ netron
 einops
 opencv-python
 kornia
+scipy
+ml_collections

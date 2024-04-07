@@ -475,7 +475,7 @@ def summary_model(model, input_x):
 
 if __name__ == "__main__":
     vit_name = "R50-ViT-B_16"
-    img_size = 224
+    img_size = 320
     vit_patches_size = 16
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

@@ -79,7 +79,7 @@ def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, wor
     for epoch in tqdm(range(start_epoch+1, 300), desc='Epoch'):
         if(args.use_distribute):
             sampler.set_epoch(epoch)
-        train_loss, train_l1_loss, train_mse_loss, train_l1_sobel_loss, train_laplacian_loss, train_iou_loss, train_dice_loss, train_com_loss = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+        train_loss, train_l1_loss, train_mse_loss, train_l1_sobel_loss, train_laplacian_loss, train_iou_loss, train_dice_loss, train_com_loss, mask_L1_loss = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
         val_loss, val_acc, val_num = 0.0, 0.0, 0.0
         pbar_batch = tqdm(train_data, desc='Training')
         for i, (data, target) in enumerate(pbar_batch):
@@ -100,6 +100,7 @@ def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, wor
             train_iou_loss += loss_dict['iou_loss']
             train_dice_loss += loss_dict['dice_loss']
             train_com_loss += loss_dict['com_loss']
+            mask_L1_loss += loss_dict['mask_L1_loss']
 
             train_time_interval = time.time() - time_stamp
             time_stamp = time.time()
@@ -113,6 +114,7 @@ def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, wor
                 writer.add_scalar('loss/train_iou_loss', train_iou_loss/(i+1), step_train)
                 writer.add_scalar('loss/train_dice_loss', train_dice_loss/(i+1), step_train)
                 writer.add_scalar('loss/train_com_loss', train_com_loss/(i+1), step_train)
+                writer.add_scalar('loss/mask_L1_loss', train_loss.item()/(i+1), step_train)
             postfix = {
                 '[epoch]': epoch,
                 'progress': '{}/{}'.format(i, args.step_per_epoch),
@@ -168,7 +170,7 @@ if __name__ == "__main__":
     parser.add_argument('--reload_model_name', default='MobileViT_50', type=str, help='name of reload model')
     parser.add_argument('--local_rank', default=0, type=int, help='local rank')
     parser.add_argument('--world_size', default=4, type=int, help='world size')
-    parser.add_argument('--batch_size', default=1, type=int, help='batch size')
+    parser.add_argument('--batch_size', default=10, type=int, help='batch size')
     parser.add_argument('--data_path', default="/data/AIM500", type=str, help='data path of AIM_500 dataset')
     parser.add_argument('--use_distribute', default=False, type=bool, help='train on distribute Devices by torch.distributed')
     args = parser.parse_args()

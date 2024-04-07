@@ -73,6 +73,7 @@ class MattingLoss(torch.nn.Module):
             'iou_loss': iou_loss.item(),
             'dice_loss': dice_loss.item(),
             'com_loss': com_loss.item(),
+            'mask_L1_loss': mask_L1_loss.item(),
             'loss_all': loss_all
         }
         return loss_dict
