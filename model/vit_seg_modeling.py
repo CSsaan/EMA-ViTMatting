@@ -483,7 +483,7 @@ if __name__ == "__main__":
     config_vit.n_classes = 1
     config_vit.n_skip = 3
     if vit_name.find('R50') != -1:
-        config_vit.patches.grid = (int(img_size / vit_patches_size), int(img_size / vit_patches_size))
+        config_vit.patches.grid = (int(img_size / vit_patches_size), int(img_size / vit_patches_size)) # 20*20网格
     net = VisionTransformer(config_vit, img_size=img_size, num_classes=config_vit.n_classes).to(device)
 
     img = torch.randn(1, 3, img_size, img_size).to(device)

@@ -45,11 +45,11 @@ class AIM500Dataset(Dataset):
             # transforms.RandomErasing(p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0),  # 如果你需要随机擦除
         ])
         
-        # self.transform_label = transforms.Compose([
-        #     transforms.ToTensor(),
-        #     # transforms.Normalize((0.5,), (0.5,)),
-        #     transforms.Resize((w, h)),
-        # ])
+        self.transform_label = transforms.Compose([
+            transforms.ToTensor(),
+            # transforms.Normalize((0.5,), (0.5,)),
+            transforms.Resize((w, h)),
+        ])
 
     def __len__(self):
         return len(self.image_filenames)
@@ -61,7 +61,7 @@ class AIM500Dataset(Dataset):
         label = Image.open(label_name).convert('L')
         
         image = self.transform_image(image)
-        label = self.transform_image(label)
+        label = self.transform_label(label)
         
         return image, label
 
@@ -94,7 +94,7 @@ if __name__ == '__main__':
         batch_size = 8
         shuffle = True
         # 设定训练数据集路径
-        train_dataset = AIM500Dataset('train', root_dir='/workspace/ViTMatting/data/AIM500')
+        train_dataset = AIM500Dataset('VisionTransformer', 'train', root_dir='/workspaces/EMA-ViTMatting/data/AIM500')
         # 设置批量大小和是否随机打乱数据
         train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=4,  pin_memory=True, drop_last=True, shuffle=shuffle)
         # 检查数据加载是否正常工作
@@ -102,7 +102,7 @@ if __name__ == '__main__':
             print(images.shape, labels.shape)
         print("-" * 40)
         # 设定训练数据集路径
-        test_dataset = AIM500Dataset('test', root_dir='/workspace/ViTMatting/data/AIM500')
+        test_dataset = AIM500Dataset('VisionTransformer', 'test', root_dir='/workspaces/EMA-ViTMatting/data/AIM500')
         # 设置批量大小和是否随机打乱数据
         test_loader = DataLoader(test_dataset, batch_size=batch_size, num_workers=4,  pin_memory=True, drop_last=True, shuffle=shuffle)
         # 检查数据加载是否正常工作

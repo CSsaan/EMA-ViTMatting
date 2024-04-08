@@ -18,3 +18,4 @@ opencv-python
 kornia
 scipy
 ml_collections
+albumentations
