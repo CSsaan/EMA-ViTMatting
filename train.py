@@ -67,7 +67,7 @@ def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, wor
 
     print('---------------- training... -----------------------')
     time_stamp = time.time()
-    min_loss = 10000
+    min_loss, val_min_loss = 10000, 10000
 
     # 断点续练
     start_epoch = 0
@@ -80,7 +80,7 @@ def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, wor
         if(args.use_distribute):
             sampler.set_epoch(epoch)
         train_loss, train_l1_loss, train_mse_loss, train_l1_sobel_loss, train_laplacian_loss, train_iou_loss, train_dice_loss, train_com_loss, mask_L1_loss = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-        val_loss, val_acc, val_num = 0.0, 0.0, 0.0
+        step_each_bach = 0
         pbar_batch = tqdm(train_data, desc='Training')
         for i, (data, target) in enumerate(pbar_batch):
             data_time_interval = time.time() - time_stamp
@@ -125,25 +125,27 @@ def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, wor
             # if local_rank == 0:
             #     print('epoch:{} {}/{} time:{:.2f}+{:.2f} loss:{:.4e}'.format(epoch, i, args.step_per_epoch, data_time_interval, train_time_interval, train_loss/i))
             step_train += 1
+            step_each_bach += 1
         
         i = 1
         if epoch % 3 == 0:
-            evaluate(model, val_data, epoch, i, local_rank, batch_size)
+            val_min_loss = evaluate(model, val_data, epoch, i, local_rank, batch_size, val_min_loss)
             i = 0
 
-        if(train_loss.item()/step_train < min_loss):
-            model.save_model(epoch, local_rank)
+        if(train_loss.item()/step_each_bach < min_loss):
+            model.save_model(epoch, 'best', local_rank)
             min_loss = train_loss.item()
         
         # 分布式训练进程同步
         if(args.use_distribute):
             dist.barrier()
 
-def evaluate(model, val_data, epoch, i, local_rank, batch_size):
+def evaluate(model, val_data, epoch, i, local_rank, batch_size, val_min_loss):
     if local_rank == 0:
         writer_val = SummaryWriter('log/validate_EMA-Matting')
 
-    loss = 1000
+    loss = 0.0
+    step_each_bach = 0
     for _, imgs in enumerate(val_data):
         data = imgs[0] # torch.Size([8]) -> torch.Size([8, 1])
         target = imgs[1] # torch.Size([8]) -> torch.Size([8, 1])
@@ -151,21 +153,27 @@ def evaluate(model, val_data, epoch, i, local_rank, batch_size):
         target = target.to(device, non_blocking=True)
         with torch.no_grad():
             pred, loss_dict = model.update(data, target, epoch, i, batch_size, training=False)
-            loss = loss_dict['loss_all'].item()
+            loss += loss_dict['loss_all'].item()
         # for j in range(gt.shape[0]):
         #     loss.append(-10 * math.log10(((gt[j] - pred[j]) * (gt[j] - pred[j])).mean().cpu().item()))
+        step_each_bach += 1
    
+    if(loss.item()/step_each_bach < val_min_loss):
+            model.save_model(epoch, 'best_val', local_rank)
+            val_min_loss = loss.item()
     
     if local_rank == 0:
         print("*"*10, "test_loss", "*"*10)
         print(str(epoch), loss)
         writer_val.add_scalar('train/test_loss_all', loss, epoch)
         print("*"*30)
+    
+    return val_min_loss
         
 if __name__ == "__main__":    
     print_cuda()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--use_model_name', default='VisionTransformer', type=str, help='name of model to use') # 'GoogLeNet'、 'ViT'、 'MobileViT'
+    parser.add_argument('--use_model_name', default='VisionTransformer', type=str, choices=['GoogLeNet','ViT','MobileViT','VisionTransformer'], help='name of model to use') # 'GoogLeNet'、'ViT'、'MobileViT'、'VisionTransformer'
     parser.add_argument('--reload_model', default=False, type=bool, help='reload model')
     parser.add_argument('--reload_model_name', default='MobileViT_50', type=str, help='name of reload model')
     parser.add_argument('--local_rank', default=0, type=int, help='local rank')
