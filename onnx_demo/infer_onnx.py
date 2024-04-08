@@ -10,7 +10,6 @@ CURRENT_DIR = os.path.split(os.path.abspath(__file__))[0]  # 当前目录
 config_path = CURRENT_DIR.rsplit('/', 1)[0]  # 上1级目录
 sys.path.append(config_path)
 from config import *
-(w, h) = load_model_parameters('benchmark/config/model_MobileViT_parameters.yaml')['image_size']
 
 # 定义Normalize函数
 def normalize_image(image, mean, std):
@@ -18,13 +17,15 @@ def normalize_image(image, mean, std):
     image = (image - mean) / std  # 根据均值和标准差进行归一化
     return image.astype(np.float32)
 
-def preprocess_image(image):
+def preprocess_image(image, model_name):
+    (w, h) = load_model_parameters(f'benchmark/config/model_{model_name}_parameters.yaml')['image_size']
     # Resize图像
     image = cv2.resize(image, (w, h))
     # 转换为Tensor并归一化
-    image = normalize_image(image, [0.49372172, 0.46933405, 0.44654398], [0.30379174, 0.29378528, 0.30067085])
+    # image = normalize_image(image, [0.49372172, 0.46933405, 0.44654398], [0.30379174, 0.29378528, 0.30067085])
     image = np.transpose(image, (2, 0, 1))  # 调整维度顺序
     image = np.expand_dims(image, axis=0)  # 添加batch维度
+    image = image.astype(np.float32)
     return image
 
 def onnx_inference(model_path, input):
@@ -61,13 +62,16 @@ def onnx_inference(model_path, input):
 
 
 if __name__ == "__main__":
-    model_path = "onnx_demo/MobileViT.onnx"
+
+    model = "VisionTransformer"
+
+    model_path = f"onnx_demo/{model}.onnx"
     image_path = "data/AIM500/test/mask/o_dc288b1a.png"
 
     # 加载图片
     image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # 将图像从BGR转换为RGB
     # 输入预处理
-    image = preprocess_image(image)
+    image = preprocess_image(image, model)
     # 推理
     onnx_inference(model_path, image)

@@ -47,7 +47,7 @@ def get_learning_rate(step):
 
 def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, world_size, data_path):
     if local_rank == 0:
-        writer = SummaryWriter('log/train_EMAVFI')
+        writer = SummaryWriter(f'log/train_{use_model_name}')
     step_train, step_eval, best = 0, 0, 0
 
     # --------- AIM-500 数据集加载 -----------------
@@ -129,7 +129,7 @@ def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, wor
         
         i = 1
         if epoch % 3 == 0:
-            val_min_loss = evaluate(model, val_data, epoch, i, local_rank, batch_size, val_min_loss)
+            val_min_loss = evaluate(model, use_model_name, val_data, epoch, i, local_rank, batch_size, val_min_loss)
             i = 0
 
         if(train_loss.item()/step_each_bach < min_loss):
@@ -140,9 +140,9 @@ def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, wor
         if(args.use_distribute):
             dist.barrier()
 
-def evaluate(model, val_data, epoch, i, local_rank, batch_size, val_min_loss):
+def evaluate(model, use_model_name, val_data, epoch, i, local_rank, batch_size, val_min_loss):
     if local_rank == 0:
-        writer_val = SummaryWriter('log/validate_EMA-Matting')
+        writer_val = SummaryWriter(f'log/validate_{use_model_name}')
 
     loss = 0.0
     step_each_bach = 0

@@ -14,11 +14,7 @@ class LoadModel:
         if(model_name =='GoogLeNet'):
             inception_model, googlelenet_model = MODEL_CONFIG[model_name]
             self.net = googlelenet_model(inception_model)
-        elif(model_name =='ViT'):
-            self.net = MODEL_CONFIG[model_name]
-        elif(model_name =='MobileViT'):
-            self.net = MODEL_CONFIG[model_name]
-        elif(model_name =='VisionTransformer'):
+        elif(model_name =='ViT' or model_name =='MobileViT' or model_name =='VisionTransformer'):
             self.net = MODEL_CONFIG[model_name]
 
         self.name = model_name

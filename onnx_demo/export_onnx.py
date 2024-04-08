@@ -32,19 +32,19 @@ class PyTorchToONNXConverter:
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = MODEL_CONFIG['MobileViT'].eval().to(device)
-    checkpoint = torch.load(f'ckpt/MobileViT_53_pure.pkl', map_location=device)
+    model = MODEL_CONFIG['VisionTransformer'].eval().to(device)
+    checkpoint = torch.load(f'ckpt/VisionTransformer_64_pure.pkl', map_location=device)
     model.load_state_dict(checkpoint, False)
     converter = PyTorchToONNXConverter(model)
-    input_shape = (1, 3, 512, 512)  # 示例输入大小:(None, 3, 256, 256) --> 模型输出大小:(None, 1, 256, 256)
-    converter.convert_to_onnx(input_shape, 'onnx_demo/MobileViT.onnx', device)
+    input_shape = (1, 3, 224, 224)  # 示例输入大小:(None, 3, 256, 256) --> 模型输出大小:(None, 1, 256, 256)
+    converter.convert_to_onnx(input_shape, 'onnx_demo/VisionTransformer.onnx', device)
     print("ONNX 模型导出完成！")
 
     # TODO: INT8量化
 
     # 检查导出的模型
     import onnx
-    onnx_model = onnx.load('onnx_demo/MobileViT.onnx')
+    onnx_model = onnx.load('onnx_demo/VisionTransformer.onnx')
     onnx.checker.check_model(onnx_model)
     # print(onnx.helper.printable_graph(onnx_model.graph))
     print("ONNX 模型检查通过！")
