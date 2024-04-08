@@ -56,6 +56,7 @@ def onnx_inference(model_path, input):
     for i in range(outputs[0].shape[0]):
         outputs = outputs[0]
         outputs = outputs.squeeze()
+        outputs = np.clip(outputs, 0, 1)
         outputs = (outputs * 255).astype(np.uint8) 
         cv2.imwrite(f"result/output_{i}.png", outputs)
         print(f"output_{i}.png saved.")

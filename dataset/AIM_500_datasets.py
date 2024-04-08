@@ -1,3 +1,4 @@
+import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
@@ -30,8 +31,10 @@ class AIM500Dataset(Dataset):
         
         # Transformations for images and labels
         self.transform_image = transforms.Compose([
-            transforms.ToTensor(),
-            # transforms.Normalize((0.49372172, 0.46933405, 0.44654398), (0.30379174, 0.29378528, 0.30067085)),
+            # transforms.ToTensor(),
+            transforms.PILToTensor(),
+            transforms.ConvertImageDtype(torch.float),
+            transforms.Normalize((0.49372172, 0.46933405, 0.44654398), (0.30379174, 0.29378528, 0.30067085)),
             transforms.Resize((w, h)),  # 如果你需要调整图像大小
             # transforms.RandomHorizontalFlip(),  # 如果你需要随机水平翻转
             # transforms.RandomVerticalFlip(),  # 如果你需要随机垂直翻转
@@ -46,8 +49,10 @@ class AIM500Dataset(Dataset):
         ])
         
         self.transform_label = transforms.Compose([
-            transforms.ToTensor(),
-            # transforms.Normalize((0.5,), (0.5,)),
+            # transforms.ToTensor(),
+            transforms.PILToTensor(),
+            transforms.ConvertImageDtype(torch.float),
+            transforms.Normalize((0.49372172, 0.46933405, 0.44654398), (0.30379174, 0.29378528, 0.30067085)),
             transforms.Resize((w, h)),
         ])
 
