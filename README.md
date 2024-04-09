@@ -57,9 +57,9 @@ data
 ```
 
 ```bash
-python train.py --use_model_name 'MobileViT' --reload_model False --local_rank 0 --world_size 4 --batch_size 16 --data_path '/data/AIM500' --use_distribute False
+python train.py --use_model_name 'VisionTransformer' --reload_model False --local_rank 0 --world_size 4 --batch_size 16 --data_path '/data/AIM500' --use_distribute False
 ```
-* `--use_model_name 'MobileViT'`: The name of the model to load
+* `--use_model_name 'VisionTransformer'`: The name of the model to load
 * `--reload_model False`: Model checkpoint continuation training
 * `--local_rank 0`: The local rank of the current process
 * `--world_size 4`: The total number of processes
@@ -90,6 +90,7 @@ None
 - [x] Model saving                     -> Trainer.py
 - [x] Test visualization               ->
 - [x] Model inference                  -> inferenceCS.py
+- [x] Pytorch model to onnx            -> onnx_demo
 - [ ] Model acceleration               ->
 - [ ] Model optimization               ->
 - [ ] Model tuning                     ->

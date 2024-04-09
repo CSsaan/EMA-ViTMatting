@@ -54,7 +54,7 @@ data
 ```
 
 ```bash
-python train.py --use_model_name 'MobileViT' --reload_model False --local_rank 0 --world_size 4 --batch_size 16 --data_path '/data/AIM500' --use_distribute False
+python train.py --use_model_name 'VisionTransformer' --reload_model False --local_rank 0 --world_size 4 --batch_size 16 --data_path '/data/AIM500' --use_distribute False
 ```
 
 #### 测试脚本:
@@ -80,6 +80,7 @@ python inferenceCS.py --image_path data/AIM500/test/original/o_dc288b1a.jpg --mo
 - [x] 模型保存                 -> Trainer.py
 - [x] 测试可视化               -> 
 - [x] 模型推理                 -> inferenceCS.py
+- [x] pytorch模型转onnx        -> onnx_demo
 - [ ] 模型加速                 ->
 - [ ] 模型优化                 ->
 - [ ] 模型调参                 ->

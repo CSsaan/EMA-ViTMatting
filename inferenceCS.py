@@ -48,7 +48,7 @@ def main(args):
     model.load_state_dict(checkpoint, False)
     model.eval()
 
-    # 假设model是您加载的训练好的模型
+    # 推理
     output = model(input_tensor)
     # 转为单通道8位的灰度图保存
     output = output.squeeze().cpu().detach().numpy()
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--image_path', type=str, default="/workspaces/EMA-ViTMatting/data/AIM500/train/original/o_1b4c1dfc.jpg", help='Path to the input image')
     parser.add_argument('--model', type=str, default="VisionTransformer", help='Name of the model to use for inference')
-    parser.add_argument('--model_name', type=str, default="VisionTransformer_64_pure", help='Name of the model state_dict')
+    parser.add_argument('--model_name', type=str, default="VisionTransformer_157_pure", help='Name of the model state_dict')
     parser.add_argument('--output_dir', type=str, default='./result', help="Path to the output directory")
     args = parser.parse_args()
 
