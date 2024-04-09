@@ -6,14 +6,13 @@ import numpy as np
 
 import sys
 import os
-CURRENT_DIR = os.path.split(os.path.abspath(__file__))[0]  # 当前目录
-config_path = CURRENT_DIR.rsplit('/', 1)[0]  # 上1级目录
+config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(config_path)
 from config import *
 
 # 定义Normalize函数
 def normalize_image(image, mean, std):
-    image = image / 255.0  # 将图像像素值归一化到[0, 1]
+    # image = image / 255.0  # 将图像像素值归一化到[0, 1]
     image = (image - mean) / std  # 根据均值和标准差进行归一化
     return image.astype(np.float32)
 
@@ -22,7 +21,7 @@ def preprocess_image(image, model_name):
     # Resize图像
     image = cv2.resize(image, (w, h))
     # 转换为Tensor并归一化
-    # image = normalize_image(image, [0.49372172, 0.46933405, 0.44654398], [0.30379174, 0.29378528, 0.30067085])
+    image = normalize_image(image, [0.49372172, 0.46933405, 0.44654398], [0.30379174, 0.29378528, 0.30067085])
     image = np.transpose(image, (2, 0, 1))  # 调整维度顺序
     image = np.expand_dims(image, axis=0)  # 添加batch维度
     image = image.astype(np.float32)
@@ -67,7 +66,7 @@ if __name__ == "__main__":
     model = "VisionTransformer"
 
     model_path = f"onnx_demo/{model}.onnx"
-    image_path = "data/AIM500/test/mask/o_dc288b1a.png"
+    image_path = "data/AIM500/test/original/p_f6b02429.jpg"
 
     # 加载图片
     image = cv2.imread(image_path)

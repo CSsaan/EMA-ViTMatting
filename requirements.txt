@@ -19,3 +19,5 @@ kornia
 scipy
 ml_collections
 albumentations
+onnx
+onnxruntime-gpu

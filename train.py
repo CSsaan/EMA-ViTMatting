@@ -132,6 +132,8 @@ def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, wor
             val_min_loss = evaluate(model, use_model_name, val_data, epoch, i, local_rank, batch_size, val_min_loss)
             i = 0
 
+        model.save_model(epoch, 'last', local_rank)
+
         if(train_loss.item()/step_each_bach < min_loss):
             model.save_model(epoch, 'best', local_rank)
             min_loss = train_loss.item()
@@ -158,9 +160,9 @@ def evaluate(model, use_model_name, val_data, epoch, i, local_rank, batch_size, 
         #     loss.append(-10 * math.log10(((gt[j] - pred[j]) * (gt[j] - pred[j])).mean().cpu().item()))
         step_each_bach += 1
    
-    if(loss.item()/step_each_bach < val_min_loss):
+    if(loss/step_each_bach < val_min_loss):
             model.save_model(epoch, 'best_val', local_rank)
-            val_min_loss = loss.item()
+            val_min_loss = loss
     
     if local_rank == 0:
         print("*"*10, "test_loss", "*"*10)
@@ -177,8 +179,8 @@ if __name__ == "__main__":
     parser.add_argument('--reload_model', default=False, type=bool, help='reload model')
     parser.add_argument('--reload_model_name', default='MobileViT_50', type=str, help='name of reload model')
     parser.add_argument('--local_rank', default=0, type=int, help='local rank')
-    parser.add_argument('--world_size', default=4, type=int, help='world size')
-    parser.add_argument('--batch_size', default=10, type=int, help='batch size')
+    parser.add_argument('--world_size', default=8, type=int, help='world size')
+    parser.add_argument('--batch_size', default=8, type=int, help='batch size')
     parser.add_argument('--data_path', default="/data/AIM500", type=str, help='data path of AIM_500 dataset')
     parser.add_argument('--use_distribute', default=False, type=bool, help='train on distribute Devices by torch.distributed')
     args = parser.parse_args()

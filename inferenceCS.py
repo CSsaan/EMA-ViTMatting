@@ -13,8 +13,8 @@ sys.path.append(config_path)
 from config import *
 
 def normalize_image(image, mean, std):
-    image = image / 255.0  # 将图像像素值归一化到[0, 1]
-    # image = (image - mean) / std  # 根据均值和标准差进行归一化
+    # image = image / 255.0  # 将图像像素值归一化到[0, 1]
+    image = (image - mean) / std  # 根据均值和标准差进行归一化
     return image.astype(np.float32)
 
 def preprocess_image(image, model_name):
@@ -22,7 +22,7 @@ def preprocess_image(image, model_name):
     # Resize图像
     image = cv2.resize(image, (w, h))
     # 转换为Tensor并归一化
-    # image = normalize_image(image, [0.49372172, 0.46933405, 0.44654398], [0.30379174, 0.29378528, 0.30067085])
+    image = normalize_image(image, [0.49372172, 0.46933405, 0.44654398], [0.30379174, 0.29378528, 0.30067085])
     image = np.transpose(image, (2, 0, 1))  # 调整维度顺序
     image = np.expand_dims(image, axis=0)  # 添加batch维度
     return image
@@ -66,7 +66,7 @@ def main(args):
 if __name__ == '__main__':
     # python inferenceCS.py --image_path data/AIM500/test/original/o_dc288b1a.jpg --model_name MobileViT_194_pure
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_path', type=str, default="/workspaces/EMA-ViTMatting/data/AIM500/train/original/o_1b4c1dfc.jpg", help='Path to the input image')
+    parser.add_argument('--image_path', type=str, default="data/AIM500/test/original/p_f6b02429.jpg", help='Path to the input image')
     parser.add_argument('--model', type=str, default="VisionTransformer", help='Name of the model to use for inference')
     parser.add_argument('--model_name', type=str, default="VisionTransformer_157_pure", help='Name of the model state_dict')
     parser.add_argument('--output_dir', type=str, default='./result', help="Path to the output directory")

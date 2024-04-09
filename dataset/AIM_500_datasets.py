@@ -49,10 +49,11 @@ class AIM500Dataset(Dataset):
         ])
         
         self.transform_label = transforms.Compose([
-            # transforms.ToTensor(),
-            transforms.PILToTensor(),
-            transforms.ConvertImageDtype(torch.float),
-            transforms.Normalize((0.49372172, 0.46933405, 0.44654398), (0.30379174, 0.29378528, 0.30067085)),
+            transforms.ToTensor(),
+            # transforms.PILToTensor(),
+            # transforms.ConvertImageDtype(torch.float),
+            # # transforms.Normalize((0.49372172, 0.46933405, 0.44654398), (0.30379174, 0.29378528, 0.30067085)),
+            # transforms.Normalize((0.5,), (0.5,)),
             transforms.Resize((w, h)),
         ])
 

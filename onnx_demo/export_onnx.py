@@ -4,8 +4,7 @@ import torch.onnx
 
 import sys
 import os
-CURRENT_DIR = os.path.split(os.path.abspath(__file__))[0]  # 当前目录
-config_path = CURRENT_DIR.rsplit('/', 1)[0]  # 上1级目录
+config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(config_path)
 from config import *
 		
@@ -33,7 +32,7 @@ class PyTorchToONNXConverter:
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = MODEL_CONFIG['VisionTransformer'].eval().to(device)
-    checkpoint = torch.load(f'ckpt/VisionTransformer_64_pure.pkl', map_location=device)
+    checkpoint = torch.load(f'ckpt/VisionTransformer_157_pure.pkl', map_location=device)
     model.load_state_dict(checkpoint, False)
     converter = PyTorchToONNXConverter(model)
     input_shape = (1, 3, 224, 224)  # 示例输入大小:(None, 3, 256, 256) --> 模型输出大小:(None, 1, 256, 256)
