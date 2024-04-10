@@ -1,6 +1,6 @@
 # EMA-ViTMatting
 
-[[Project Page]](https://github.com/CSsaan/EMA-ViTMatting/) [[中文主页]](https://github.com/CSsaan/EMA-ViTMatting/README_CN.md)
+[[Project Page]](https://github.com/CSsaan/EMA-ViTMatting/) [[中文主页]](https://github.com/CSsaan/EMA-ViTMatting/blob/main/README_CN.md)
 
 Using EMA to train Matting task. 
 
