@@ -6,8 +6,6 @@ data/classification/*
 model/onnx/*onnx
 *.pth
 test.py
-result/*.jpg
-result/*.png
 onnx_demo/*.onnx
 
 
