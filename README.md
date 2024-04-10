@@ -12,11 +12,13 @@ This project focuses on the field of image alpha matting. Currently, there are f
 
 Demo: [Bilibili Video](https://www.bilibili.com/)
 
-| **Original Image** | **Ground Truth Label** | **Training Results**  | **Test Results** |
-| --- | --- | --- | --- |
-| <img src="/.gif">  | <img src="/.gif">  | <img src="/.gif">  | <img src="/.gif"> |
-| <img src="/.gif">  | <img src="/.gif">  | <img src="/.gif">  | <img src="/.gif"> |
-| <img src="/.gif">  | <img src="/.gif">  | <img src="/.gif">  | <img src="/.gif"> |
+| **Original Image** | **Label** | **Our Results**  | **Our Result** | --- | **Original Image** | **Label** | **Our Result**  | **Our Result** | --- | **Original Image** | **Label** | **Our Result**  | **Our Result** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| <img src="result/p_f7b2317f.jpg">  | <img src="result/lab_p_f7b2317f.png">  | <img src="result/pre_p_f7b2317f.png">  | <img src="result/green_p_f7b2317f.png"> | --- | <img src="result/p_f89c7881.jpg">  | <img src="result/lab_p_f89c7881.png">  | <img src="result/pre_p_f89c7881.png">  | <img src="result/green_p_f89c7881.png"> | --- | <img src="result/p_f879fac6.jpg">  | <img src="result/lab_p_f879fac6.png">  | <img src="result/pre_p_f879fac6.png">  | <img src="result/green_p_f879fac6.png"> |
+| <img src="result/p_f30f22fd.jpg">  | <img src="result/lab_p_f30f22fd.png">  | <img src="result/pre_p_f30f22fd.png">  | <img src="result/green_p_f30f22fd.png"> | --- | <img src="result/p_fcb9a19e.jpg">  | <img src="result/lab_p_fcb9a19e.png">  | <img src="result/pre_p_fcb9a19e.png">  | <img src="result/green_p_fcb9a19e.png"> | --- | <img src="result/p_fdaa48dd.jpg">  | <img src="result/lab_p_fdaa48dd.png">  | <img src="result/pre_p_fdaa48dd.png">  | <img src="result/green_p_fdaa48dd.png"> |
+| <img src="result/p_f053bec5.jpg">  | <img src="result/lab_p_f053bec5.png">  | <img src="result/pre_p_f053bec5.png">  | <img src="result/green_p_f053bec5.png"> | --- | <img src="result/p_fe6a4bfe.jpg">  | <img src="result/lab_p_fe6a4bfe.png">  | <img src="result/pre_p_fe6a4bfe.png">  | <img src="result/green_p_fe6a4bfe.png"> | --- | <img src="result/p_feb2c2a5.jpg">  | <img src="result/lab_p_feb2c2a5.png">  | <img src="result/pre_p_feb2c2a5.png">  | <img src="result/green_p_feb2c2a5.png"> |
+| <img src="result/p_f053bec5.jpg">  | <img src="result/lab_p_f053bec5.png">  | <img src="result/pre_p_f053bec5.png">  | <img src="result/green_p_f053bec5.png"> | --- | <img src="result/p_fe6a4bfe.jpg">  | <img src="result/lab_p_fe6a4bfe.png">  | <img src="result/pre_p_fe6a4bfe.png">  | <img src="result/green_p_fe6a4bfe.png"> | --- | <img src="result/p_feb2c2a5.jpg">  | <img src="result/lab_p_feb2c2a5.png">  | <img src="result/pre_p_feb2c2a5.png">  | <img src="result/green_p_feb2c2a5.png"> |
+
 
 Model structure:
 <img src="/.png" width="600">
