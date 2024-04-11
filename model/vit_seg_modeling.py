@@ -501,3 +501,10 @@ if __name__ == "__main__":
     # # modelData = "./demo.onnx"  # 有人说应该是 onnx 文件，但我尝试 pth 是可以的 
     # torch.onnx.export(net, input_x, modelData)  # 将 pytorch 模型以 onnx 格式导出并保存
     # netron.start(modelData)  # 输出网络结构
+
+    # (3). tensorboard可视化模型网络结构
+    from torch.utils.tensorboard import SummaryWriter
+    writer = SummaryWriter(comment='test_vit',filename_suffix="_test_your_filename_suffix")
+    input_x = torch.randn(1, 3, img_size, img_size) #生成假的图片作为输入
+    writer.add_graph(net, input_x)  #模型及模型输入数据
+    writer.close()
