@@ -65,8 +65,8 @@ if __name__ == "__main__":
 
     model = "VisionTransformer"
 
-    model_path = f"onnx_demo/{model}.onnx"
-    image_path = "data/AIM500/test/original/p_f6b02429.jpg"
+    model_path = f"onnx_demo/VisionTransformer_quant_dynamic.onnx"
+    image_path = "/workspaces/EMA-ViTMatting/data/AIM500/test/original/o_e0ab2760.jpg"
 
     # 加载图片
     image = cv2.imread(image_path)

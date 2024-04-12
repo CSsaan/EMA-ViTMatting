@@ -48,6 +48,9 @@ def get_learning_rate(step):
 def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, world_size, data_path):
     if local_rank == 0:
         writer = SummaryWriter(f'log/train_{use_model_name}')
+        input_tensor = torch.Tensor(1, 3, 224, 224).to(device)
+        writer.add_graph(model.net, input_tensor)
+
     step_train, step_eval, best = 0, 0, 0
 
     # --------- AIM-500 数据集加载 -----------------
@@ -122,8 +125,6 @@ def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, wor
                 'loss_all': '{:.4f}'.format(train_loss.item()/(i+1)),
             }
             pbar_batch.set_postfix(postfix)  
-            # if local_rank == 0:
-            #     print('epoch:{} {}/{} time:{:.2f}+{:.2f} loss:{:.4e}'.format(epoch, i, args.step_per_epoch, data_time_interval, train_time_interval, train_loss/i))
             step_train += 1
             step_each_bach += 1
         
