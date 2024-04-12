@@ -279,14 +279,21 @@ class Conv2dReLU(nn.Sequential):
             stride=1,
             use_batchnorm=True,
     ):
-        conv = nn.Conv2d(
-            in_channels,
-            out_channels,
-            kernel_size,
-            stride=stride,
-            padding=padding,
-            bias=not (use_batchnorm),
+        # conv = nn.Conv2d(
+        #     in_channels,
+        #     out_channels,
+        #     kernel_size,
+        #     stride=stride,
+        #     padding=padding,
+        #     bias=not (use_batchnorm),
+        # )
+
+        # 可分离卷积
+        conv = nn.Sequential(
+            nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1, groups=in_channels),
+            nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0),
         )
+
         relu = nn.ReLU(inplace=True)
 
         bn = nn.BatchNorm2d(out_channels)
@@ -502,9 +509,9 @@ if __name__ == "__main__":
     # torch.onnx.export(net, input_x, modelData)  # 将 pytorch 模型以 onnx 格式导出并保存
     # netron.start(modelData)  # 输出网络结构
 
-    # (3). tensorboard可视化模型网络结构
-    from torch.utils.tensorboard import SummaryWriter
-    writer = SummaryWriter(comment='test_vit',filename_suffix="_test_your_filename_suffix")
-    input_x = torch.randn(1, 3, img_size, img_size) #生成假的图片作为输入
-    writer.add_graph(net, input_x)  #模型及模型输入数据
-    writer.close()
+    # # (3). tensorboard可视化模型网络结构
+    # from torch.utils.tensorboard import SummaryWriter
+    # writer = SummaryWriter(comment='test_vit',filename_suffix="_test_your_filename_suffix")
+    # input_x = torch.randn(1, 3, img_size, img_size) #生成假的图片作为输入
+    # writer.add_graph(net, input_x)  #模型及模型输入数据
+    # writer.close()
