@@ -178,6 +178,7 @@ if __name__ == "__main__":
     print_cuda()
     parser = argparse.ArgumentParser()
     parser.add_argument('--use_model_name', default='VisionTransformer', type=str, choices=['GoogLeNet','ViT','MobileViT','VisionTransformer'], help='name of model to use') # 'GoogLeNet'、'ViT'、'MobileViT'、'VisionTransformer'
+    parser.add_argument('--use_QAT', default=True, type=bool, help='train QAT model')
     parser.add_argument('--reload_model', default=False, type=bool, help='reload model')
     parser.add_argument('--reload_model_name', default='MobileViT_50', type=str, help='name of reload model')
     parser.add_argument('--local_rank', default=0, type=int, help='local rank')
@@ -207,7 +208,7 @@ if __name__ == "__main__":
     exp = os.path.abspath('.').split('/')[-1]
 
     # 实例化模型
-    model = LoadModel(args.local_rank, args.use_model_name, args.use_distribute)
+    model = LoadModel(args.local_rank, args.use_model_name, args.use_distribute, args.use_QAT)
     
     # 断电续练
     epochs = 0
