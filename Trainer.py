@@ -77,11 +77,16 @@ class LoadModel:
             save_dir = 'ckpt'
             if not os.path.exists(save_dir):
                 os.makedirs(save_dir)
+            # 删除旧模型
+            for filename in os.listdir(save_dir):
+                if filename.startswith(f"{self.name}_{arg}_"):
+                    file_path = os.path.join(save_dir, filename)
+                    os.remove(file_path)
             # 保存模型参数(纯模型结构，不支持断点续训)
-            torch.save(self.net.state_dict(), os.path.join(save_dir, f'{self.name}_{arg}_pure.pkl')) # {str(epoch)}
+            torch.save(self.net.state_dict(), os.path.join(save_dir, f'{self.name}_{arg}_pure_{epoch}.pkl')) # {str(epoch)}
             # 支持断点续训
             state = {'model': self.net.state_dict(), 'optimizer': self.optimG.state_dict(), 'epoch': epoch}
-            torch.save(state, os.path.join('ckpt', f'{self.name}_{arg}.pkl')) # {str(epoch)}
+            torch.save(state, os.path.join('ckpt', f'{self.name}_{arg}_{epoch}.pkl')) # {str(epoch)}
 
     @torch.no_grad()
     def inference(self, input):

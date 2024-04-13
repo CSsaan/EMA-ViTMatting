@@ -42,13 +42,14 @@ def get_learning_rate(step):
         mul = step / 2000
         # return 2e-4 * mul
     else:
-        mul = np.cos((step - 2000) / (300 * args.step_per_epoch - 2000) * 10 * np.pi) * 0.5 + 0.5
+        mul = np.cos((step - 2000) / (300 * args.step_per_epoch - 2000) * 100 * np.pi) * 0.5 + 0.5
     return (1e-4 - 1e-5) * mul + 1e-5
 
 def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, world_size, data_path):
     if local_rank == 0:
         writer = SummaryWriter(f'log/train_{use_model_name}')
-        input_tensor = torch.Tensor(1, 3, 224, 224).to(device)
+        (w, h) = load_model_parameters(f'benchmark/config/model_{use_model_name}_parameters.yaml')['image_size']
+        input_tensor = torch.Tensor(1, 3, w, h).to(device)
         writer.add_graph(model.net, input_tensor)
 
     step_train, step_eval, best = 0, 0, 0
