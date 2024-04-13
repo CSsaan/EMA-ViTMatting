@@ -30,7 +30,6 @@ def load_all_model_config_before_access():
     ALL_parameters['VisionTransformer_parameters'] = load_model_parameters('benchmark/config/model_VisionTransformer_parameters.yaml')
 
 def load_VisionTransformer_config():
-    use_QAT = ALL_parameters['VisionTransformer_parameters']['use_QAT']
     vit_name = ALL_parameters['VisionTransformer_parameters']['vit_name']
     img_size = ALL_parameters['VisionTransformer_parameters']['image_size'][0]
     vit_patches_size = ALL_parameters['VisionTransformer_parameters']['vit_patches_size']
@@ -39,7 +38,6 @@ def load_VisionTransformer_config():
     config_vit = CONFIGS[vit_name]
     config_vit.n_classes =n_classes
     config_vit.n_skip = n_skip
-    config_vit.use_QAT = use_QAT
     if vit_name.find('R50') != -1:
         config_vit.patches.grid = (int(img_size / vit_patches_size), int(img_size / vit_patches_size))
     return config_vit, img_size
@@ -72,7 +70,6 @@ MODEL_CONFIG = {
     "VisionTransformer": VisionTransformer(
             config_vit, 
             img_size=img_size, 
-            num_classes=config_vit.n_classes,
-            use_QAT=config_vit.use_QAT
+            num_classes=config_vit.n_classes
     )
 }

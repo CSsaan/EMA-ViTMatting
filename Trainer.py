@@ -10,7 +10,7 @@ from config import *
 
     
 class LoadModel:
-    def __init__(self, local_rank, model_name='GoogLeNet', use_distribute=False, use_QAT=False):
+    def __init__(self, local_rank, model_name='GoogLeNet', use_distribute=False):
         if(model_name =='GoogLeNet'):
             inception_model, googlelenet_model = MODEL_CONFIG[model_name]
             self.net = googlelenet_model(inception_model)
@@ -18,7 +18,6 @@ class LoadModel:
             self.net = MODEL_CONFIG[model_name]
 
         self.name = model_name
-        self.use_QAT = use_QAT
         print(f'loaded model: {self.name}')
         
         # train
@@ -28,11 +27,6 @@ class LoadModel:
             self.net = DDP(self.net, device_ids=[local_rank], output_device=local_rank)
         # move model and loss function to device
         self.device()
-
-        # 量化感知训练
-        if (self.use_QAT):
-            print(f'use QAT')
-            self.prepare_QAT()
 
     def train(self):
         self.net.train()
@@ -45,20 +39,6 @@ class LoadModel:
         self.net.to(_device)
         self.loss.to(_device)
         print(f'Model use Device: {_device}')
-
-    def prepare_QAT(self):
-        # 模型必须设置为 eval 才能使融合工作
-        self.eval()
-        # 附加一个全局的qconfig，其中包含关于要附加哪种观察器的信息。对于服务器推断，请使用'x86'，对于移动推断，请使用'qnnpack'。
-        # 其他量化配置，如选择对称或非对称量化以及MinMax或L2Norm校准技术，可以在这里指定。
-        # 注意：旧的'fbgemm'仍然可用，但'x86'是服务器推断的推荐默认值。
-        # self.net.qconfig = torch.ao.quantization.get_default_qconfig('fbgemm')
-        self.net.qconfig = torch.ao.quantization.get_default_qat_qconfig('x86')
-        # 将激活与前面的层融合，如果适用的话，这需要根据模型架构手动完成
-        # self.net = torch.ao.quantization.fuse_modules(self.net, [['transformer', 'decoder', 'segmentation_head', 'to_logits']])
-        # 为量化感知训练准备模型。这会在模型中插入观察器和伪量化器，
-        # 模型需要设置为训练以使量化感知逻辑生效，该模型将在校准期间观察权重和激活张量。
-        self.net = torch.ao.quantization.prepare_qat(self.net.train())
 
     def reload_model(self, name=None):
         def convert(param):
@@ -94,8 +74,6 @@ class LoadModel:
     def save_model(self, epoch, arg, rank=0):
         if rank == 0:
             self.net.eval()
-            if (self.use_QAT):
-                self.net = torch.ao.quantization.convert(self.net)
             # 仅保存模型
             save_dir = 'ckpt'
             if not os.path.exists(save_dir):
