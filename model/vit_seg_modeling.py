@@ -385,7 +385,7 @@ class DecoderCup(nn.Module):
 
 
 class VisionTransformer(nn.Module):
-    def __init__(self, config, img_size=224, num_classes=21843, zero_head=False, vis=False):
+    def __init__(self, config, img_size=224, num_classes=21843, zero_head=False, vis=False, use_QAT=False):
         super(VisionTransformer, self).__init__()
         self.num_classes = num_classes
         self.zero_head = zero_head
@@ -403,16 +403,26 @@ class VisionTransformer(nn.Module):
             Reduce('b c h w -> b h w', 'mean'),
         )
 
+        self.use_QAT = use_QAT
+        # QuantStub 将张量从浮点数转换为量化
+        self.quant = torch.ao.quantization.QuantStub()
+        # DeQuantStub将张量从量化转换为浮点数
+        self.dequant = torch.ao.quantization.DeQuantStub()
+
     def forward(self, x):
+        if self.use_QAT:
+            x = self.quant(x)
+        
         if x.size()[1] == 1:
             x = x.repeat(1,3,1,1)
         x, attn_weights, features = self.transformer(x)  # (B, n_patch, hidden)
         x = self.decoder(x, features)
         x = self.segmentation_head(x)
+        x = self.to_logits(x)
 
-        logits = self.to_logits(x)
-        
-        return logits
+        if self.use_QAT:
+            x = self.dequant(x)
+        return x
 
     def load_from(self, weights):
         with torch.no_grad():
