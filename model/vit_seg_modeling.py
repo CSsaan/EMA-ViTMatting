@@ -310,7 +310,7 @@ class DecoderBlock(nn.Module):
             kernel_size=3,
             padding=1,
             use_batchnorm=use_batchnorm,
-            use_depthwise_sep_conv=True,
+            use_depthwise_sep_conv=False,
         )
         self.conv2 = Conv2dReLU(
             out_channels,
@@ -318,7 +318,7 @@ class DecoderBlock(nn.Module):
             kernel_size=3,
             padding=1,
             use_batchnorm=use_batchnorm,
-            use_depthwise_sep_conv=True,
+            use_depthwise_sep_conv=False,
         )
         self.up = nn.UpsamplingBilinear2d(scale_factor=2)
 
@@ -350,7 +350,7 @@ class DecoderCup(nn.Module):
             kernel_size=3,
             padding=1,
             use_batchnorm=True,
-            use_depthwise_sep_conv=True,
+            use_depthwise_sep_conv=False,
         )
         decoder_channels = config.decoder_channels
         in_channels = [head_channels] + list(decoder_channels[:-1])

@@ -162,7 +162,7 @@ def evaluate(model, use_model_name, val_data, epoch, i, local_rank, batch_size, 
         #     loss.append(-10 * math.log10(((gt[j] - pred[j]) * (gt[j] - pred[j])).mean().cpu().item()))
         step_each_bach += 1
    
-    if(loss/step_each_bach < val_min_loss):
+    if(loss < val_min_loss):
             model.save_model(epoch, 'best_val', local_rank)
             val_min_loss = loss
     
