@@ -19,6 +19,9 @@ class LoadModel:
 
         self.name = model_name
         print(f'loaded model: {self.name}')
+
+        self.min_loss = 100000
+        self.val_min_loss = 100000
         
         # train
         self.optimG = AdamW(self.net.parameters(), lr=2e-4, weight_decay=1e-4)
@@ -54,6 +57,8 @@ class LoadModel:
         self.net.load_state_dict(checkpoint['model'], False)
         self.optimG.load_state_dict(checkpoint['optimizer'])
         epochs = checkpoint['epoch']
+        self.min_loss = checkpoint['min_loss']
+        self.val_min_loss = checkpoint['val_min_loss']
         return epochs
         
 
@@ -86,7 +91,7 @@ class LoadModel:
             # 保存模型参数(纯模型结构，不支持断点续训)
             torch.save(self.net.state_dict(), os.path.join(save_dir, f'{self.name}_{arg}_pure_{epoch}.pkl')) # {str(epoch)}
             # 支持断点续训
-            state = {'model': self.net.state_dict(), 'optimizer': self.optimG.state_dict(), 'epoch': epoch}
+            state = {'model': self.net.state_dict(), 'optimizer': self.optimG.state_dict(), 'epoch': epoch, 'min_loss' : self.min_loss, 'val_min_loss' : self.val_min_loss}
             torch.save(state, os.path.join('ckpt', f'{self.name}_{arg}_{epoch}.pkl')) # {str(epoch)}
 
     @torch.no_grad()

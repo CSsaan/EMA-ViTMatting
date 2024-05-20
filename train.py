@@ -71,7 +71,7 @@ def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, wor
 
     print('---------------- training... -----------------------')
     time_stamp = time.time()
-    min_loss, val_min_loss = 10000, 10000
+    # min_loss, val_min_loss = 10000, 10000
 
     # 断点续练
     start_epoch = 0
@@ -131,20 +131,20 @@ def train(model, use_model_name, reloadModel_epochs, local_rank, batch_size, wor
         
         i = 1
         if epoch % 3 == 0:
-            val_min_loss = evaluate(model, use_model_name, val_data, epoch, i, local_rank, batch_size, val_min_loss)
+            evaluate(model, use_model_name, val_data, epoch, i, local_rank, batch_size)
             i = 0
 
         model.save_model(epoch, 'last', local_rank)
 
-        if(train_loss.item()/step_each_bach < min_loss):
+        if(train_loss.item()/step_each_bach < model.min_loss):
             model.save_model(epoch, 'best', local_rank)
-            min_loss = train_loss.item()
+            model.min_loss = train_loss.item()/step_each_bach
         
         # 分布式训练进程同步
         if(args.use_distribute):
             dist.barrier()
 
-def evaluate(model, use_model_name, val_data, epoch, i, local_rank, batch_size, val_min_loss):
+def evaluate(model, use_model_name, val_data, epoch, i, local_rank, batch_size):
     if local_rank == 0:
         writer_val = SummaryWriter(f'log/validate_{use_model_name}')
 
@@ -162,9 +162,9 @@ def evaluate(model, use_model_name, val_data, epoch, i, local_rank, batch_size, 
         #     loss.append(-10 * math.log10(((gt[j] - pred[j]) * (gt[j] - pred[j])).mean().cpu().item()))
         step_each_bach += 1
    
-    if(loss < val_min_loss):
+    if(loss/step_each_bach < model.val_min_loss):
             model.save_model(epoch, 'best_val', local_rank)
-            val_min_loss = loss
+            model.val_min_loss = loss/step_each_bach
     
     if local_rank == 0:
         print("*"*10, "test_loss", "*"*10)
@@ -172,7 +172,6 @@ def evaluate(model, use_model_name, val_data, epoch, i, local_rank, batch_size, 
         writer_val.add_scalar('train/test_loss_all', loss, epoch)
         print("*"*30)
     
-    return val_min_loss
         
 if __name__ == "__main__":    
     print_cuda()
